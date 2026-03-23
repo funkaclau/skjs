@@ -7,6 +7,6 @@ import {
 import {parseUnits, handleApproveAndRunSafe, handleApproveAndRunWeb3, handleApproveAndRun} from "./approvals";
 export {multicallBalances, multicallPools,
     copyToClipboard, shortenAddress,
-    formatAmount, toBI, convertBigIntToFloat, calculateShidoForMaxPurchase, parseAmountToWei, formatNumberWithCommas,
-    parseUnits, handleApproveAndRunSafe, handleApproveAndRunWeb3, handleApproveAndRun,
+    formatAmount, toBI, convertBigIntToFloat, calculateShidoForMaxPurchase, parseAmountToWei, 
+    parseUnits, handleApproveAndRunSafe, handleApproveAndRunWeb3, handleApproveAndRun, formatNumberWithCommas
 };
