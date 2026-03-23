@@ -1,16 +1,3 @@
-// src/config/marketsConfig.js
-// JS ONLY — simple vars, no giant structs.
-// Goal: feed MarketsLanding + swap params with a reliable baseline list of pools.
-//
-// Strategy:
-// - PRESET_POOLS = "main pools" (where liquidity is expected to be)
-// - EXTRA_POOLS  = optional known secondary pools (you will expand)
-// - AVOID_POOLS  = pools you NEVER want considered (dead / rugs / discontinued / dust)
-// - DELISTED_TOKENS = tokens you don't want shown at all (optional)
-//
-// IMPORTANT:
-// - MarketsLanding currently uses PRESET_POOLS to compute best buy/sell.
-// - Later you can expand to include EXTRA_POOLS or do dynamic discovery.
 
 export const RPC_URL = "https://evm.shidoscan.net/";
 

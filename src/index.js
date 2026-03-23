@@ -1,17 +1,7 @@
-import { handleApproveAndRun, parseAmountToWei, handleApproveAndRunWeb3, formatAmount, shortenAddress, copyToClipboard,
-    toBI, calculateShidoForMaxPurchase, convertBigIntToFloat, formatNumberWithCommas, multicallBalances
- } from "./utils";
+export * from "./utils";
 
-export {
-    handleApproveAndRun,
-    handleApproveAndRunWeb3,
-    formatAmount, toBI, calculateShidoForMaxPurchase, convertBigIntToFloat, parseAmountToWei, formatNumberWithCommas,
-    copyToClipboard, shortenAddress, multicallBalances
-};
-
-
-
-
+export * from "./models";
+export {getWidgets} from "./components/socialWidgets";
 import {
     BATCH_ABI,
     TAG,
@@ -31,11 +21,11 @@ import {
 import {
     CONTRACTS, ABIS, SC_METADATA, KIDDO_ADDRESSES, WHITELISTED_COLLECTIONS, 
     GATEWAYS, ABI, NFT_ABI, NFT_ENUMERABLE, NFT2ME_721_ABI, WHITELISTED_TOKENS, TOKEN_IMAGE_MAP,
-    STAKING_POOLS
+    STAKING_POOLS, prettySymbol, ECOSYSTEM_TOOLS, socialLinks
 } from "./config";
 
 
-import {POOL_ABI, PRESET_POOLS, Q192, Q96, WSHIDO_USDC_POOL, prettySymbol, EXPLICIT_MAP, ROUTE_HINTS_BY_SYMBOL, DOMINANT_GROUPS, 
+import {POOL_ABI, PRESET_POOLS, Q192, Q96, WSHIDO_USDC_POOL, EXPLICIT_MAP, ROUTE_HINTS_BY_SYMBOL, DOMINANT_GROUPS, 
     FULL_TOKEN_LIST, QUOTER_V2, QUOTER_V2_ABI, SWAP_ROUTER_ABI, SWAP_ROUTER_V3
 
 } from "./config/price"
@@ -58,5 +48,6 @@ export {
     WHITELISTED_TOKENS,
     EXPLICIT_MAP, ROUTE_HINTS_BY_SYMBOL, TOKEN_IMAGE_MAP,
     STAKING_POOLS, MULTICALL, POOL_REGISTRY, DOMINANT_GROUPS, FULL_TOKEN_LIST, QUOTER_V2, QUOTER_V2_ABI,
-    RPC_URL, SWAP_ROUTER_ABI, SWAP_ROUTER_V3
+    RPC_URL, SWAP_ROUTER_ABI, SWAP_ROUTER_V3,
+    ECOSYSTEM_TOOLS, socialLinks
 };

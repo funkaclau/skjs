@@ -5,8 +5,33 @@ import {
     formatAmount, toBI, convertBigIntToFloat, calculateShidoForMaxPurchase, parseAmountToWei, formatNumberWithCommas
 } from "./bigint";
 import {parseUnits, handleApproveAndRunSafe, handleApproveAndRunWeb3, handleApproveAndRun} from "./approvals";
+import {
+toChecksumOrNull, toRaw, fromRaw, price1Per0_from_sqrtP,
+  encodePathExactIn, encodePathExactOut,
+  getMetaCached, getWshidoUsdOracle, resolveUsdPerToken,
+  midOutPerIn_from_slot0,
+  shortSym, selectRouteKeepingPayToken, fmt8, floorTo, poolMetaCache, fmtUSD, getDisplayPairSymbols, resolveLogoUrl, splitSymbolsFromLabel,
+} from "./price";
+import { addrEq, uniqBy } from "./helpers";
+import { dirForAction, poolDirForToken, makeSwapLink, makeSwapUrl } from "./swap";
 export {multicallBalances, multicallPools,
     copyToClipboard, shortenAddress,
     formatAmount, toBI, convertBigIntToFloat, calculateShidoForMaxPurchase, parseAmountToWei, 
-    parseUnits, handleApproveAndRunSafe, handleApproveAndRunWeb3, handleApproveAndRun, formatNumberWithCommas
+    parseUnits, handleApproveAndRunSafe, handleApproveAndRunWeb3, handleApproveAndRun, formatNumberWithCommas,
+
+    toChecksumOrNull, toRaw, fromRaw, price1Per0_from_sqrtP,
+  encodePathExactIn, encodePathExactOut,
+  getMetaCached, getWshidoUsdOracle, resolveUsdPerToken,
+  midOutPerIn_from_slot0,
+  shortSym, selectRouteKeepingPayToken, fmt8, floorTo, poolMetaCache,
+  getDisplayPairSymbols, fmtUSD, splitSymbolsFromLabel,  
+
+addrEq, uniqBy,
+  dirForAction, poolDirForToken, makeSwapLink, makeSwapUrl,
+  resolveLogoUrl,
 };
+
+export * from "./pricing.js";
+export * from "./getContract.js"
+export * from "./marketsOverview.js"
+export * from "./ecosystemQueries.js"
