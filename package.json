@@ -1,0 +1,23 @@
+{
+  "name": "skjs",
+  "version": "1.0.0",
+  "description": "ShidoKid JS utilities",
+  "type": "module",
+  "main": "./src/index.js",
+  "exports": {
+    ".": "./src/index.js"
+  },
+  "keywords": [
+    "web3",
+    "shido",
+    "utils"
+  ],
+  "author": "Crypto Clau",
+  "license": "MIT",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  }
+}
