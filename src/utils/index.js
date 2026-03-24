@@ -2,7 +2,8 @@ import {multicallPools} from "./multicallPools";
 import {multicallBalances} from "./multicallBalances";
 import {copyToClipboard, shortenAddress} from "./address";
 import {
-    formatAmount, toBI, convertBigIntToFloat, calculateShidoForMaxPurchase, parseAmountToWei, formatNumberWithCommas
+    formatAmount, toBI, convertBigIntToFloat, calculateShidoForMaxPurchase, parseAmountToWei, formatNumberWithCommas,
+    roundHumanBI
 } from "./bigint";
 import {parseUnits, handleApproveAndRunSafe, handleApproveAndRunWeb3, handleApproveAndRun} from "./approvals";
 import {
@@ -29,6 +30,7 @@ export {multicallBalances, multicallPools,
 addrEq, uniqBy,
   dirForAction, poolDirForToken, makeSwapLink, makeSwapUrl,
   resolveLogoUrl,
+  roundHumanBI
 };
 
 export * from "./pricing.js";

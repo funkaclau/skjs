@@ -61,3 +61,13 @@ export const formatNumberWithCommas = (num) => {
     const [i, d] = num.toString().split(".");
     return i.replace(/\B(?=(\d{3})+(?!\d))/g, ",") + (d ? "." + d : "");
 };
+
+export const roundHumanBI = (value, decimals = 2) => {
+  const num = parseFloat(value || 0);
+  if (num === 0) return "0.00";
+  const effectiveDecimals = num < 0.01 && decimals < 4 ? 4 : decimals;
+  return new Intl.NumberFormat("en-US", {
+    minimumFractionDigits: decimals,
+    maximumFractionDigits: effectiveDecimals,
+  }).format(num);
+};
