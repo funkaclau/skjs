@@ -1,4 +1,4 @@
-import {multicallPools} from "./multicallPools";
+import {multicallPools, resolveAllPrices} from "./multicallPools";
 import {multicallBalances} from "./multicallBalances";
 import {copyToClipboard, shortenAddress} from "./address";
 import {
@@ -30,7 +30,7 @@ export {multicallBalances, multicallPools,
 addrEq, uniqBy,
   dirForAction, poolDirForToken, makeSwapLink, makeSwapUrl,
   resolveLogoUrl,
-  roundHumanBI
+  roundHumanBI, resolveAllPrices
 };
 
 export * from "./pricing.js";

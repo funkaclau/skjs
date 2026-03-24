@@ -152,3 +152,70 @@ let tokenCallCount = 0;
 
   return pools;
 }
+
+/**
+ * Resolves all token prices in USD by building a graph from pool data
+ * and anchoring everything to USDC (or WSHIDO if USDC is a hop away).
+ */
+export async function resolveAllPrices(web3, poolAddresses, wshidoOraclePrice) {
+  // 1. Get all pool data in one/two multicalls
+  const pools = await multicallPools(web3, poolAddresses);
+  
+  const USDC_ADDR = "0x4300000000000000000000000000000000000003".toLowerCase();
+  const WSHIDO_ADDR = "0x2921350d44e00000000000000000000000000001".toLowerCase();
+
+  // 2. Build Adjacency Graph
+  // tokenAddr -> [ { peerAddr, priceOfPeerInToken } ]
+  const graph = {};
+
+  const addEdge = (from, to, price) => {
+    if (!graph[from]) graph[from] = [];
+    graph[from].push({ to, price });
+  };
+
+  pools.forEach(p => {
+    if (!p || p.liquidity === 0n) return;
+
+    // midOutPerIn_from_slot0 returns how many token1 you get for 1 token0
+    const p1per0 = midOutPerIn_from_slot0(p.sqrtPriceX96, p.token0.decimals, p.token1.decimals);
+    const p0per1 = 1 / p1per0;
+
+    const t0 = p.token0.address.toLowerCase();
+    const t1 = p.token1.address.toLowerCase();
+
+    addEdge(t0, t1, p1per0);
+    addEdge(t1, t0, p0per1);
+  });
+
+  // 3. BFS to find USD value
+  const prices = { [USDC_ADDR]: 1.0 };
+  
+  // If we have an external oracle for WSHIDO, seed it as a secondary anchor
+  if (wshidoOraclePrice) {
+    prices[WSHIDO_ADDR] = parseFloat(wshidoOraclePrice);
+  }
+
+  // Queue for BFS: [tokenAddress]
+  const queue = Object.keys(prices);
+  const visited = new Set(queue);
+
+  while (queue.length > 0) {
+    const current = queue.shift();
+    const currentPriceUSD = prices[current];
+
+    const neighbors = graph[current] || [];
+    for (const edge of neighbors) {
+      if (!visited.has(edge.to)) {
+        visited.add(edge.to);
+        // Price of neighbor in USD = (USD per Current) / (Neighbor per Current)
+        // Or more simply: CurrentPriceUSD * (Current per Neighbor)
+        // Since edge.price is (To per From), and we are going From -> To:
+        // NeighborPriceUSD = currentPriceUSD / edge.price
+        prices[edge.to] = currentPriceUSD / edge.price;
+        queue.push(edge.to);
+      }
+    }
+  }
+
+  return prices;
+}
