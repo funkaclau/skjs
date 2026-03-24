@@ -156,7 +156,7 @@ export const PRESET_POOLS = [
   //{ label: "IPN / ILCFNBR — 1% (odd pair)", address: "0xb5a9efd0da7f7c50419dee016a30f81ddad43564" },
   //{ label: "BOOJO / ILCFNBR — 1% (odd pair)", address: "0xfe524db8ad5fdc11cbaff72af104581625103526" },
 
-  { label: " / — 1%", address: ""},
+  { label: "ENQI / WSHIDO — 1%", address: "0x9d49B9219D3c88BF95E9a11EC226ae3d03ba3Eb8"},
 ];
 export const POOL_REGISTRY = PRESET_POOLS
   .filter(p => p.address && p.label)

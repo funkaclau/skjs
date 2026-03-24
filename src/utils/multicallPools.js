@@ -1,6 +1,7 @@
 import Web3 from "web3";
 import { MULTICALL } from "../config";
-
+import { midOutPerIn_from_slot0 } from "./price";
+import { USDC_ADDR, WSHIDO_ADDR } from "../config/markets";
 const MULTICALL_ADDRESS = "0x49Bb5bfAAAe05e44d4922F236304b2e370DaF442";
 
 const POOL_ABI = [
@@ -42,10 +43,10 @@ export async function multicallPools(web3, poolAddresses) {
   for (const addr of validPools) {
     const checksummedAddr = web3.utils.toChecksumAddress(addr);
     const c = new web3.eth.Contract(POOL_ABI, checksummedAddr);
-    calls.push({ target: addr, allowFailure: true, callData: c.methods.slot0().encodeABI() });
-    calls.push({ target: addr, allowFailure: true, callData: c.methods.token0().encodeABI() });
-    calls.push({ target: addr, allowFailure: true, callData: c.methods.token1().encodeABI() });
-    calls.push({ target: addr, allowFailure: true, callData: c.methods.liquidity().encodeABI() });
+    calls.push({ target: checksummedAddr, allowFailure: true, callData: c.methods.slot0().encodeABI() });
+    calls.push({ target: checksummedAddr, allowFailure: true, callData: c.methods.token0().encodeABI() });
+    calls.push({ target: checksummedAddr, allowFailure: true, callData: c.methods.token1().encodeABI() });
+    calls.push({ target: checksummedAddr, allowFailure: true, callData: c.methods.liquidity().encodeABI() });
   }
 
   const result = await multicall.methods.aggregate3(calls).call();
@@ -63,16 +64,25 @@ export async function multicallPools(web3, poolAddresses) {
     if (!r0?.success || !r1?.success || !r2?.success) continue;
 
     try {
-      const decodedSlot0 = web3.eth.abi.decodeParameters(["uint160", "int24", "uint16", "uint16", "uint16", "uint8", "bool"], r0.returnData);
+      const decodedSlot0 = web3.eth.abi.decodeParameters(
+        ["uint160", "int24", "uint16", "uint16", "uint16", "uint8", "bool"],
+        r0.returnData
+      );
+
+      // FIX: Force to String/Number to prevent BigInt/Number collision in math
+      const sqrtPriceX96 = decodedSlot0[0].toString(); 
       const t0 = web3.eth.abi.decodeParameter("address", r1.returnData);
       const t1 = web3.eth.abi.decodeParameter("address", r2.returnData);
-      const liq = r3?.success ? web3.eth.abi.decodeParameter("uint128", r3.returnData) : "0";
+      const liq = r3?.success ? r3.returnData : "0"; // Keep as hex/string
 
-      if (!tokenCache[t0]) tokenCalls.push(t0);
-      if (!tokenCache[t1]) tokenCalls.push(t1);
-
-      pools.push({ address: validPools[i], sqrtPriceX96: decodedSlot0[0], token0: { address: t0 }, token1: { address: t1 }, liquidity: liq });
-    } catch (e) { console.error("Decoding error", e); }
+      pools.push({
+        address: validPools[i],
+        sqrtPriceX96: sqrtPriceX96, // No longer a BigInt object
+        token0: { address: t0 },
+        token1: { address: t1 },
+        liquidity: liq
+      });
+    } catch (e) { console.error(e); }
   }
 
   // Fetch Token Metadata
@@ -107,34 +117,73 @@ export async function resolveAllPrices(web3, poolAddresses, wshidoOraclePrice) {
   const pools = await multicallPools(web3, poolAddresses);
   const graph = {};
   
-  const addEdge = (from, to, price) => {
-    if (!graph[from]) graph[from] = [];
-    graph[from].push({ to, price });
-  };
+  const USDC = "0xeE1Fc22381e6B6bb5ee3bf6B5ec58DF6F5480dF8".toLowerCase();
+  const WSHIDO = "0x8cbafFD9b658997E7bf87E98FEbF6EA6917166F7".toLowerCase();
 
   pools.forEach(p => {
-    if (!p || !p.sqrtPriceX96 || p.liquidity === "0") return;
-    const p1per0 = midOutPerIn_from_slot0(p.sqrtPriceX96, p.token0.decimals, p.token1.decimals);
-    if (p1per0 <= 0) return;
-    addEdge(p.token0.address.toLowerCase(), p.token1.address.toLowerCase(), p1per0);
-    addEdge(p.token1.address.toLowerCase(), p.token0.address.toLowerCase(), 1 / p1per0);
+    if (!p || !p.sqrtPriceX96 || p.sqrtPriceX96 === "0") return;
+
+    const t0 = p.token0.address.toLowerCase();
+    const t1 = p.token1.address.toLowerCase();
+
+    // FORCE CORRECT DECIMALS FOR ANCHORS IF CACHE FAILED
+    let d0 = tokenCache[t0]?.decimals;
+    let d1 = tokenCache[t1]?.decimals;
+    // Hardcoded Overrides for known 6-decimal tokens
+    const SIX_DECIMAL_TOKENS = [
+      "0xeE1Fc22381e6B6bb5ee3bf6B5ec58DF6F5480dF8", // USDC
+      "0xF7B264B723059a05fBf13E32783F88db33A24365", // SDS
+    ].map(a => a.toLowerCase());
+
+    if (SIX_DECIMAL_TOKENS.includes(t0)) d0 = 6;
+    if (SIX_DECIMAL_TOKENS.includes(t1)) d1 = 6;
+
+    // WSHIDO is 18
+    if (t0 === WSHIDO) d0 = 18;
+    if (t1 === WSHIDO) d1 = 18;
+
+    // Fallback
+    d0 = d0 || 18;
+    d1 = d1 || 18;
+    try {
+      const ratio = midOutPerIn_from_slot0(p.sqrtPriceX96.toString(), d0, d1);
+      if (!ratio || isNaN(ratio)) return;
+
+      if (!graph[t0]) graph[t0] = [];
+      if (!graph[t1]) graph[t1] = [];
+
+      graph[t0].push({ to: t1, ratio: ratio });
+      graph[t1].push({ to: t0, ratio: 1 / ratio });
+    } catch (e) {}
   });
 
-  const prices = { [USDC_ADDR]: 1.0 };
-  if (wshidoOraclePrice) prices[WSHIDO_ADDR] = parseFloat(wshidoOraclePrice);
+  // Start with USDC = $1.00
+  const prices = { [USDC]: 1.0 };
+  
+  // Use Oracle for WSHIDO if available to ensure the bridge is strong
+  if (wshidoOraclePrice && !isNaN(parseFloat(wshidoOraclePrice))) {
+    prices[WSHIDO] = parseFloat(wshidoOraclePrice);
+  }
 
   const queue = Object.keys(prices);
   const visited = new Set(queue);
 
-  while (queue.length > 0) {
-    const curr = queue.shift();
+  let i = 0;
+  while (i < queue.length) {
+    const curr = queue[i];
+    const currentPrice = prices[curr];
+    i++;
+
     (graph[curr] || []).forEach(edge => {
-      if (!visited.has(edge.to)) {
-        visited.add(edge.to);
-        prices[edge.to] = prices[curr] / edge.price;
-        queue.push(edge.to);
+      const target = edge.to.toLowerCase();
+      if (!visited.has(target)) {
+        visited.add(target);
+        // If 1 curr = R neighbor, then Price(neighbor) = Price(curr) / R
+        prices[target] = currentPrice / edge.ratio;
+        queue.push(target);
       }
     });
   }
+
   return prices;
 }
