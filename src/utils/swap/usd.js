@@ -64,3 +64,65 @@ export async function listUsdAcrossPools(web3, bench, tokenAddr) {
     return out;
 }
 
+// Fast path for anchored tokens (USDC / WSHIDO)
+export function getFastUsd(addr, bench, fallback = null) {
+  if (!addr || !bench) return fallback;
+
+  const a = String(addr).toLowerCase();
+
+  if (a === String(bench.usdcAddr || "").toLowerCase()) return 1;
+  if (a === String(bench.wshidoAddr || "").toLowerCase()) return bench.usdPerWshido;
+
+  return fallback;
+}
+
+// Main resolver with cache (cache passed from caller)
+export async function resolveUsdNow({
+  web3,
+  addr,
+  bench,
+  cache,      // Map()
+  fallback = null,
+  resolveUsdPerToken
+}) {
+  const fast = getFastUsd(addr, bench, fallback);
+  if (fast != null) return fast;
+
+  if (!addr || !bench) return null;
+
+  const key = String(addr).toLowerCase();
+
+  if (cache?.has(key)) {
+    return cache.get(key);
+  }
+
+  try {
+    const r = await resolveUsdPerToken(web3, addr, bench);
+    const usd = r?.usd ?? null;
+
+    if (cache) cache.set(key, usd);
+
+    return usd;
+  } catch {
+    if (cache) cache.set(key, null);
+    return null;
+  }
+}
+
+// Fill missing side using price ratio
+export function deriveMissingUsdSide(usdIn, usdOut, outPerIn) {
+  let inUsd = usdIn;
+  let outUsd = usdOut;
+
+  if (!outPerIn || !Number.isFinite(outPerIn) || outPerIn <= 0) {
+    return { inUsd, outUsd };
+  }
+
+  if (inUsd == null && outUsd != null) {
+    inUsd = outUsd * outPerIn;
+  } else if (outUsd == null && inUsd != null) {
+    outUsd = inUsd / outPerIn;
+  }
+
+  return { inUsd, outUsd };
+}

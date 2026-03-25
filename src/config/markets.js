@@ -96,7 +96,6 @@ export const FULL_TOKEN_LIST = [
   { address: "0xc3a8815291af5a506308d5efbef337a914cdb452", symbol: "QBN", name: "Qubiton", decimals: 18 },
   { address: "0x9ccE1FD369E92004f2985035Ba5F319013D1Eff7", symbol: "GNUS", name: "GNUS", decimals: 18 },
     { address: "0xF84B713c7a6e3DA38a96049A4E94dA751e536a83", symbol: "NGEN", name: "NanoGen", decimals: 18 },
-  {address: "0x8442768f6B50Ff7cA855EC3405B2a9A535088aEA", symbol: "ENQI", name: "Enerqi", decimals: 18}
 ];
 
 

@@ -169,6 +169,7 @@ export const STAKING_POOLS = {
   "0x8442768f6B50Ff7cA855EC3405B2a9A535088aEA": {default: "0x3412BB63757cbc459E8AF96845837fB9CAe9FdB7", bubble: "0x0F5f707e9389d0312269E1E6048D9D134f6dc981"},
   "0xe550Bde2F0898552B38a41635d7a8DDB1Fd81276": { default: "0xC4802A4F8B590c0D15D48c76c1E2A7289876E4B2" }, // SHDX
   "0xc3a8815291af5a506308D5efBeF337a914CDb452": { default: "0x573a0eECa92Ba68b484f3f4762D776F1BEd2A8ba" }, // QBN
+  "0xdB798cF512Af4F7E41AE4Bf4b7f20CDF74Bc21f9": {default: "0x3772dcce53a8ea8b45B0048EF0bB0f9Ce4A7a5eC"}
 };
 // 1. Move your images from /src/assets/ to /public/assets/
 // 2. Update the map to use lowercase keys and root-relative paths:

@@ -32,8 +32,9 @@ addrEq, uniqBy,
   resolveLogoUrl,
   roundHumanBI, resolveAllPrices
 };
-
+export * from "./swap/math.js";
 export * from "./pricing.js";
 export * from "./getContract.js"
 export * from "./marketsOverview.js"
 export * from "./ecosystemQueries.js"
+export * from "./swap/usd.js";

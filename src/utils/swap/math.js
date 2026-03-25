@@ -2,6 +2,10 @@ import {
   fromRaw
 } from "../price";
 
+
+
+export const pickMax = (s) => String(s || "").replace(/[^\d.]/g, "");
+
 export const ratioOutPerInRaw = (rawOut, rawIn, decOut, decIn) => {
   const out = Number(fromRaw(rawOut, decOut));
   const inn = Number(fromRaw(rawIn, decIn));
@@ -17,9 +21,11 @@ export const ratioInPerOutRaw = (rawIn, rawOut, decIn, decOut) => {
 };
 
 export const isAnchoredUsd = (addr, bench) => {
-  if (!addr || !bench?.usdcAddr) return false;
-  const a = addr.toLowerCase();
-  return a === bench.usdcAddr.toLowerCase() || a === (bench.usdtAddr || "").toLowerCase();
+  if (!addr || !bench) return false;
+  const a = String(addr).toLowerCase();
+  return (
+    a === String(bench.usdcAddr || "").toLowerCase() ||
+    a === String(bench.wshidoAddr || "").toLowerCase()
+  );
 };
-
-
+export const getAddrStr = (val) => (typeof val === "string" ? val : val?.address || "");
