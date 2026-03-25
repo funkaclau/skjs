@@ -138,7 +138,7 @@ export const PRESET_POOLS = [
   { label: "DESHI / SDS — 1%",     address: "0x0AB9Ce663A304E1De114d6D1b75d37a68aCa2111" },
   { label: "CWK / ILCFNBR — 1%",     address: "0x5248D7Aa35AeCaDF0f3282B3AA3b272C636D400e" },
   { label: "RAKUN / KENSEI — 1%",  address: "0xf4206e9a6ee82b75e0ae201fff24b730c12bc513" },
-  { label: " /  — 1%",  address: "0x2778Ae652C46e4a9B6F797Fce77F6e38Ba2F2218" },
+  { label: "P.Coffee / WSHIDO — 1%",  address: "0x2778Ae652C46e4a9B6F797Fce77F6e38Ba2F2218" },
   { label: " /  — 1%",  address: "" },
   
   
