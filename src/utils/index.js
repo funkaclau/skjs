@@ -15,6 +15,7 @@ toChecksumOrNull, toRaw, fromRaw, price1Per0_from_sqrtP,
 } from "./price";
 import { addrEq, uniqBy } from "./helpers";
 import { dirForAction, poolDirForToken, makeSwapLink, makeSwapUrl } from "./swap";
+import { resolveTokenImageByAddress } from "./tokenImage";
 export {multicallBalances, multicallPools,
     copyToClipboard, shortenAddress,
     formatAmount, toBI, convertBigIntToFloat, calculateShidoForMaxPurchase, parseAmountToWei, 
@@ -30,6 +31,7 @@ export {multicallBalances, multicallPools,
 addrEq, uniqBy,
   dirForAction, poolDirForToken, makeSwapLink, makeSwapUrl,
   resolveLogoUrl,
+  resolveTokenImageByAddress,
   roundHumanBI, resolveAllPrices
 };
 export * from "./swap/math.js";
