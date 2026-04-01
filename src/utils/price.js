@@ -100,6 +100,10 @@ function fmtUSD(n) {
    Web3 helpers & caching
    ========================================================= */
 const poolMetaCache = new Map(); // key: poolAddress lowercased -> meta
+const poolMetaInflight = new Map(); // key: poolAddress lowercased -> Promise<meta>
+const usdResolveCache = new Map(); // key: token|bench|avoid -> { ts, value }
+const usdResolveInflight = new Map(); // key: token|bench|avoid -> Promise<value>
+const USD_CACHE_TTL_MS = 15000;
 
 async function fetchPoolMeta(web3, poolAddr) {
   const pool = new web3.eth.Contract(POOL_ABI, poolAddr);
@@ -128,9 +132,18 @@ async function fetchPoolMeta(web3, poolAddr) {
 async function getMetaCached(web3, addr) {
   const k = addr.toLowerCase();
   if (poolMetaCache.has(k)) return poolMetaCache.get(k);
-  const m = await fetchPoolMeta(web3, addr);
-  poolMetaCache.set(k, m);
-  return m;
+  if (poolMetaInflight.has(k)) return poolMetaInflight.get(k);
+  const p = (async () => {
+    const m = await fetchPoolMeta(web3, addr);
+    poolMetaCache.set(k, m);
+    return m;
+  })();
+  poolMetaInflight.set(k, p);
+  try {
+    return await p;
+  } finally {
+    poolMetaInflight.delete(k);
+  }
 }
 
 function midOutPerIn_from_slot0(sqrtPriceX96, dec0, dec1) {
@@ -213,133 +226,157 @@ async function resolveUsdPerToken(
 ) {
   const key = (tokenAddr || "").toLowerCase();
   if (!key) return null;
+  const benchKey = `${String(bench?.usdcAddr || "").toLowerCase()}|${String(bench?.wshidoAddr || "").toLowerCase()}|${Number(bench?.usdPerWshido || 0)}`;
+  const avoidKey = String(avoidAddr || "").toLowerCase();
+  const cacheKey = `${key}|${benchKey}|${avoidKey}`;
 
-  // Stop cycles
-  if (visited.has(key)) return null;
-  visited.add(key);
+  const now = Date.now();
+  const cached = usdResolveCache.get(cacheKey);
+  if (cached && (now - cached.ts) < USD_CACHE_TTL_MS) return cached.value;
+  if (usdResolveInflight.has(cacheKey)) return usdResolveInflight.get(cacheKey);
 
-  // If caller wants to prevent routing through a token (the "target" token), enforce it
-  const avoid = avoidAddr ? avoidAddr.toLowerCase() : null;
-  if (avoid && key === avoid) return null;
+  const task = (async () => {
 
-  if (!bench?.usdPerWshido) return null;
+    // Stop cycles
+    if (visited.has(key)) return null;
+    visited.add(key);
 
-  const USDC   = (bench.usdcAddr || "").toLowerCase();
-  const WSHIDO = (bench.wshidoAddr || "").toLowerCase();
-  const T      = key;
+    // If caller wants to prevent routing through a token (the "target" token), enforce it
+    const avoid = avoidAddr ? avoidAddr.toLowerCase() : null;
+    if (avoid && key === avoid) return null;
 
-  if (T === USDC)   return { usd: 1, route: ["USDC (anchor)"] };
-  if (T === WSHIDO) return { usd: bench.usdPerWshido, route: ["WSHIDO → USDC (oracle)"] };
+    if (!bench?.usdPerWshido) return null;
 
-  // ----------------------------
-  // seed metas from presets
-  // ----------------------------
-  const metas = [];
-  for (const p of PRESET_POOLS) {
-    try { metas.push(await getMetaCached(web3, p.address)); } catch {}
-  }
+    const USDC   = (bench.usdcAddr || "").toLowerCase();
+    const WSHIDO = (bench.wshidoAddr || "").toLowerCase();
+    const T      = key;
 
-  // (optional) route hints by symbol
-  let tokenSym = null;
-  for (const m of metas) {
-    if ((m.token0.address || "").toLowerCase() === T) { tokenSym = prettySymbol(m.token0.symbol); break; }
-    if ((m.token1.address || "").toLowerCase() === T) { tokenSym = prettySymbol(m.token1.symbol); break; }
-  }
+    if (T === USDC)   return { usd: 1, route: ["USDC (anchor)"] };
+    if (T === WSHIDO) return { usd: bench.usdPerWshido, route: ["WSHIDO → USDC (oracle)"] };
 
-  const hints = (tokenSym && ROUTE_HINTS_BY_SYMBOL[tokenSym]) || [];
-  for (const addr of hints) {
-    try {
-      if (!metas.some(x => (x.__poolAddr || "").toLowerCase() === (addr || "").toLowerCase())) {
-        metas.push(await getMetaCached(web3, addr));
-      }
-    } catch {}
-  }
+    // ----------------------------
+    // seed metas from presets
+    // ----------------------------
+    const metas = [];
+    for (const p of PRESET_POOLS) {
+      try { metas.push(await getMetaCached(web3, p.address)); } catch {}
+    }
+
+    // (optional) route hints by symbol
+    let tokenSym = null;
+    for (const m of metas) {
+      if ((m.token0.address || "").toLowerCase() === T) { tokenSym = prettySymbol(m.token0.symbol); break; }
+      if ((m.token1.address || "").toLowerCase() === T) { tokenSym = prettySymbol(m.token1.symbol); break; }
+    }
+
+    const hints = (tokenSym && ROUTE_HINTS_BY_SYMBOL[tokenSym]) || [];
+    for (const addr of hints) {
+      try {
+        if (!metas.some(x => (x.__poolAddr || "").toLowerCase() === (addr || "").toLowerCase())) {
+          metas.push(await getMetaCached(web3, addr));
+        }
+      } catch {}
+    }
 
   // ----------------------------
   // build adjacency graph
   // token -> [{ peer, meta }]
   // ----------------------------
-  const G = new Map();
-  const add = (a, b, m) => {
-    const k = (a || "").toLowerCase();
-    const peer = (b || "").toLowerCase();
-    if (!k || !peer) return;
-    if (avoid && (k === avoid || peer === avoid)) return; // ✅ block avoided token from graph
-    if (!G.has(k)) G.set(k, []);
-    G.get(k).push({ peer, meta: m });
-  };
+    const G = new Map();
+    const add = (a, b, m) => {
+      const k = (a || "").toLowerCase();
+      const peer = (b || "").toLowerCase();
+      if (!k || !peer) return;
+      if (avoid && (k === avoid || peer === avoid)) return; // ✅ block avoided token from graph
+      if (!G.has(k)) G.set(k, []);
+      G.get(k).push({ peer, meta: m });
+    };
 
-  for (const m of metas) {
-    add(m.token0.address, m.token1.address, m);
-    add(m.token1.address, m.token0.address, m);
-  }
+    for (const m of metas) {
+      add(m.token0.address, m.token1.address, m);
+      add(m.token1.address, m.token0.address, m);
+    }
 
-  const targets = [USDC, WSHIDO].filter(Boolean);
-  const MAX_DEPTH = 4;
+    const targets = [USDC, WSHIDO].filter(Boolean);
+    const MAX_DEPTH = 4;
 
   // ----------------------------
   // BFS to nearest target (USDC or WSHIDO)
   // ----------------------------
-  const q = [{ node: T, path: [] }];
-  const seen = new Set([T]);
+    const q = [{ node: T, path: [] }];
+    const seen = new Set([T]);
 
-  let bestPath = null;
-  let bestIsUSDC = false;
+    let bestPath = null;
+    let bestIsUSDC = false;
 
-  while (q.length) {
-    const { node, path } = q.shift();
-    if (path.length > MAX_DEPTH) continue;
+    while (q.length) {
+      const { node, path } = q.shift();
+      if (path.length > MAX_DEPTH) continue;
 
-    if (avoid && node === avoid) continue;
+      if (avoid && node === avoid) continue;
 
-    if (targets.includes(node)) {
-      bestPath = path;
-      bestIsUSDC = (node === USDC);
-      break;
+      if (targets.includes(node)) {
+        bestPath = path;
+        bestIsUSDC = (node === USDC);
+        break;
+      }
+
+      const edges = G.get(node) || [];
+      for (const e of edges) {
+        if (avoid && e.peer === avoid) continue;
+        if (seen.has(e.peer)) continue;
+        seen.add(e.peer);
+        q.push({ node: e.peer, path: [...path, e] });
+      }
     }
 
-    const edges = G.get(node) || [];
-    for (const e of edges) {
-      if (avoid && e.peer === avoid) continue;
-      if (seen.has(e.peer)) continue;
-      seen.add(e.peer);
-      q.push({ node: e.peer, path: [...path, e] });
-    }
-  }
-
-  if (!bestPath || bestPath.length === 0) return null;
+    if (!bestPath || bestPath.length === 0) return null;
 
   // ----------------------------
   // Multiply mid prices along the path
   // ----------------------------
-  let factor = 1.0; // targetTokens per 1 token (cumulative)
-  let prev = T;
+    let factor = 1.0; // targetTokens per 1 token (cumulative)
+    let prev = T;
 
-  for (const step of bestPath) {
-    const meta = step.meta;
+    for (const step of bestPath) {
+      const meta = step.meta;
 
-    const p1per0 = midOutPerIn_from_slot0(
-      meta.sqrtPriceX96,
-      meta.token0.decimals,
-      meta.token1.decimals
-    );
+      const p1per0 = midOutPerIn_from_slot0(
+        meta.sqrtPriceX96,
+        meta.token0.decimals,
+        meta.token1.decimals
+      );
 
-    const fromIs0 = (meta.token0.address || "").toLowerCase() === prev.toLowerCase();
-    const outPerIn = fromIs0 ? p1per0 : (p1per0 > 0 ? 1 / p1per0 : null);
+      const fromIs0 = (meta.token0.address || "").toLowerCase() === prev.toLowerCase();
+      const outPerIn = fromIs0 ? p1per0 : (p1per0 > 0 ? 1 / p1per0 : null);
 
-    if (!outPerIn || !Number.isFinite(outPerIn) || outPerIn <= 0) return null;
+      if (!outPerIn || !Number.isFinite(outPerIn) || outPerIn <= 0) return null;
 
-    factor *= outPerIn;
-    prev = step.peer;
+      factor *= outPerIn;
+      prev = step.peer;
+    }
+
+    const usd = bestIsUSDC ? factor : (factor * bench.usdPerWshido);
+    if (!Number.isFinite(usd) || usd <= 0) return null;
+
+    return {
+      usd,
+      route: bestIsUSDC ? ["hop → USDC"] : ["hop → WSHIDO → USDC"],
+    };
+  })();
+
+  usdResolveInflight.set(cacheKey, task);
+  try {
+    const value = await task;
+    usdResolveCache.set(cacheKey, { ts: now, value });
+    if (usdResolveCache.size > 500) {
+      const oldest = usdResolveCache.keys().next().value;
+      usdResolveCache.delete(oldest);
+    }
+    return value;
+  } finally {
+    usdResolveInflight.delete(cacheKey);
   }
-
-  const usd = bestIsUSDC ? factor : (factor * bench.usdPerWshido);
-  if (!Number.isFinite(usd) || usd <= 0) return null;
-
-  return {
-    usd,
-    route: bestIsUSDC ? ["hop → USDC"] : ["hop → WSHIDO → USDC"],
-  };
 }
 
 
