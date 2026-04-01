@@ -14,6 +14,7 @@ toChecksumOrNull, toRaw, fromRaw, price1Per0_from_sqrtP,
   shortSym, selectRouteKeepingPayToken, fmt8, floorTo, poolMetaCache, fmtUSD, getDisplayPairSymbols, resolveLogoUrl, splitSymbolsFromLabel,
 } from "./price";
 import { addrEq, uniqBy } from "./helpers";
+import { fetchUniswapV3TickLiquidityHistogram } from "./uniswapV3LiquidityHistogram";
 import { dirForAction, poolDirForToken, makeSwapLink, makeSwapUrl } from "./swap";
 import { resolveTokenImageByAddress } from "./tokenImage";
 export {multicallBalances, multicallPools,
@@ -29,6 +30,7 @@ export {multicallBalances, multicallPools,
   getDisplayPairSymbols, fmtUSD, splitSymbolsFromLabel,  
 
 addrEq, uniqBy,
+  fetchUniswapV3TickLiquidityHistogram,
   dirForAction, poolDirForToken, makeSwapLink, makeSwapUrl,
   resolveLogoUrl,
   resolveTokenImageByAddress,
