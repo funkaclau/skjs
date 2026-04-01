@@ -44,6 +44,7 @@ import {
   DOMINANT_GROUPS,
   SYMBOL_OVERRIDE,
   prettySymbol,
+  UNISWAP_V3_NONFUNGIBLE_POSITION_MANAGER,
 } from "./config/markets"
 export {
     BATCH_ABI,
@@ -67,5 +68,6 @@ export {
     SYMBOL_OVERRIDE, ERC20_ABI,
     WSHIDO_ADDR, USDC_ADDR, EXTRA_POOLS, AVOID_POOLS, DELISTED_TOKENS,
     getStakingPoolTabs, normalizeBubblePools,
-    ECOSYSTEM_TOOLS, socialLinks
+    ECOSYSTEM_TOOLS, socialLinks,
+    UNISWAP_V3_NONFUNGIBLE_POSITION_MANAGER,
 };

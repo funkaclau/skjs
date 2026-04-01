@@ -15,6 +15,7 @@ toChecksumOrNull, toRaw, fromRaw, price1Per0_from_sqrtP,
 } from "./price";
 import { addrEq, uniqBy } from "./helpers";
 import { fetchUniswapV3TickLiquidityHistogram } from "./uniswapV3LiquidityHistogram";
+import { fetchWalletV3PositionsForPool } from "./uniswapV3WalletPositions";
 import { dirForAction, poolDirForToken, makeSwapLink, makeSwapUrl } from "./swap";
 import { resolveTokenImageByAddress } from "./tokenImage";
 export {multicallBalances, multicallPools,
@@ -31,6 +32,7 @@ export {multicallBalances, multicallPools,
 
 addrEq, uniqBy,
   fetchUniswapV3TickLiquidityHistogram,
+  fetchWalletV3PositionsForPool,
   dirForAction, poolDirForToken, makeSwapLink, makeSwapUrl,
   resolveLogoUrl,
   resolveTokenImageByAddress,

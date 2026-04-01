@@ -9,6 +9,9 @@ export const USDC_ADDR   = "0xeE1Fc22381e6B6bb5ee3bf6B5ec58DF6F5480dF8";
 export const QUOTER_V2 = "0xFcCBDe0ffbaba6533787d1b930a06d1aca9e9727";
 export const SWAP_ROUTER_V3 = "0x1c5316BA88a99a5c35389053D987aFfa502bfa8f";
 
+/** Uniswap v3 NonfungiblePositionManager on Shido EVM — used to read per-wallet LP NFTs (pool contract has no position list). */
+export const UNISWAP_V3_NONFUNGIBLE_POSITION_MANAGER = "0xEdCf5C38BEc4EA10fb2d67d3Da03dd1f4086866F";
+
 // Primary oracle anchor pool
 export const WSHIDO_USDC_POOL = "0x7cf3600309337c77453123fb2e695c508c61ed12";
 
