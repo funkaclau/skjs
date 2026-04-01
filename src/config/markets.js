@@ -141,6 +141,7 @@ export const PRESET_POOLS = [
   { label: "RAKUN / KENSEI — 1%",  address: "0xf4206e9a6ee82b75e0ae201fff24b730c12bc513" },
   { label: "RAKUN / CAT — 1% (secondary)", address: "0x6b4932690deC7AdBFb25258FdBA03AfF030E0a22" },
   { label: "CAT / KENSEI — 1% (secondary)", address: "0x5861a852c568762e79287B62a1c173390c0682F2" },
+  { label: "PCOFFEE / CAT — 1% (secondary)", address: "0x2f79BcEb8AEe9885D41B47C5204D7e2B6d86C827" },
   { label: "P.Coffee / WSHIDO — 1%",  address: "0x2778Ae652C46e4a9B6F797Fce77F6e38Ba2F2218" },
   { label: "WSHIDO / CAT — 1%",  address: "0xD348989F88Cc0bCCF71ff28D554597F8e17A4a8e" },
   
@@ -281,6 +282,14 @@ export const DOMINANT_GROUPS = [
       "0xD348989F88Cc0bCCF71ff28D554597F8e17A4a8e",
       "0x6b4932690deC7AdBFb25258FdBA03AfF030E0a22",
       "0x5861a852c568762e79287B62a1c173390c0682F2",
+      "0x2f79BcEb8AEe9885D41B47C5204D7e2B6d86C827",
+    ],
+  },
+  {
+    symbol: "PCOFFEE",
+    pools: [
+      "0x2778ae652c46e4a9b6f797fce77f6e38ba2f2218",
+      "0x2f79BcEb8AEe9885D41B47C5204D7e2B6d86C827",
     ],
   },
   {
@@ -341,6 +350,11 @@ export const ROUTE_HINTS_BY_SYMBOL = {
     "0xD348989F88Cc0bCCF71ff28D554597F8e17A4a8e",
     "0x6b4932690deC7AdBFb25258FdBA03AfF030E0a22",
     "0x5861a852c568762e79287B62a1c173390c0682F2",
+    "0x2f79BcEb8AEe9885D41B47C5204D7e2B6d86C827",
+  ],
+  PCOFFEE: [
+    "0x2778ae652c46e4a9b6f797fce77f6e38ba2f2218",
+    "0x2f79BcEb8AEe9885D41B47C5204D7e2B6d86C827",
   ],
   RAKUN: [
     "0xf4206e9a6ee82b75e0ae201fff24b730c12bc513",
