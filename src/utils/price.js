@@ -395,9 +395,17 @@ const numFromDisplay = (s) => Number(String(s||"").trim().split(/\s+/)[0] || "0"
 
 
 function resolveLogoUrl(symUpper) {
-  const safe = String(symUpper || "").replace(/[^A-Z0-9]/g, "");
-  const file = EXPLICIT_MAP[symUpper] || `${safe.toLowerCase()}.png`;
-  return `/${file}`; // served from /public
+  const sym = prettySymbol(String(symUpper || "").trim()) || String(symUpper || "").trim();
+  const upper = sym.toUpperCase();
+  const safe = upper.replace(/[^A-Z0-9]/g, "");
+  const file =
+    EXPLICIT_MAP[sym] ||
+    EXPLICIT_MAP[upper] ||
+    EXPLICIT_MAP[sym.toLowerCase()] ||
+    `${safe.toLowerCase()}.png`;
+  const name = String(file).replace(/^\//, "");
+  if (name.startsWith("assets/")) return `/${name}`;
+  return `/assets/${name}`;
 }
 
 // -------- precise BigInt ratio helpers (no precision loss) --------

@@ -149,7 +149,7 @@ export const STAKING_POOLS = {
   "0xfaD12E07590f06d4135c9A4FE018e44D50b83292": { default: "0xFA56A35783698cB52E47948cBF8Ab8c3629cAee1" }, // Bushido
   "0xe5420222bd4464B214551A0D81389C9a6C8aa42a": { default: "0x970335D7eBb5495aDf34654f1977de38a4e89D47" }, // Hodljeet
   "0x302c63d7A90770B3Fb374893E9325988Fa68B12A": { default: "0x9C9fB83dCc559190b599208746A90cd30534059D" }, // DWS
-  "0x56009A137Ed6D56E0133A52363a78063F429Ece4": { default: "0x4499110A6174735FB2103eD47BBFD4f280924972", bubble: "0x2309ec495DB9672eEe39544e4006Ba1f1a865602" }, // Rakun
+  "0x56009A137Ed6D56E0133A52363a78063F429Ece4": { default: "0x4499110A6174735FB2103eD47BBFD4f280924972", bubble: ["0x2309ec495DB9672eEe39544e4006Ba1f1a865602"] }, // Rakun
   "0x598cC037889bdE8bC77672AF9a1bA0fe6CCa255C": { default: "0xCD15de3b8F6134D175c40ADe7aD20493De25d4cB" }, // Boobies
   "0x1f5b6F4126575835c23D1b6c38535FA215df03c5": { default: "0x3274fc6746FaD673645f8a1141135280809f3c47" }, // MsMoon
   "0x72fDEc5fc6B92EFC2451529f52C66f34150f54a7": {default: "0x97bC04Bb72aa341daBC10b0C1d942ea650A4F821"}, // Kitsune
@@ -166,13 +166,50 @@ export const STAKING_POOLS = {
   "0x5287B6B6232305aed784CD0454bB20926f691b5A": {}, // P Coffee
   "0xF84B713c7a6e3DA38a96049A4E94dA751e536a83": {}, // NGEN
   "0x9ccE1FD369E92004f2985035Ba5F319013D1Eff7": {}, // GNUS
-  "0x8442768f6B50Ff7cA855EC3405B2a9A535088aEA": {default: "0x3412BB63757cbc459E8AF96845837fB9CAe9FdB7", bubble: "0x0F5f707e9389d0312269E1E6048D9D134f6dc981"},
+  "0x8442768f6B50Ff7cA855EC3405B2a9A535088aEA": { default: "0x3412BB63757cbc459E8AF96845837fB9CAe9FdB7", bubble: ["0x0F5f707e9389d0312269E1E6048D9D134f6dc981"] },
   "0xe550Bde2F0898552B38a41635d7a8DDB1Fd81276": { default: "0xC4802A4F8B590c0D15D48c76c1E2A7289876E4B2" }, // SHDX
   "0xc3a8815291af5a506308D5efBeF337a914CDb452": { default: "0x573a0eECa92Ba68b484f3f4762D776F1BEd2A8ba" }, // QBN
   "0xdB798cF512Af4F7E41AE4Bf4b7f20CDF74Bc21f9": {default: "0x3772dcce53a8ea8b45B0048EF0bB0f9Ce4A7a5eC"},
-  "0xACA8A5784091b16AA4937E26eC28f62F8BE23f29": {bubble: "0x687f761cDe8d5742BEDedCc7eBCf4670eb18d3DA"}
+  "0xACA8A5784091b16AA4937E26eC28f62F8BE23f29": {
+    bubble: [
+      "0x687f761cDe8d5742BEDedCc7eBCf4670eb18d3DA",
+      "0xfa864e60D084ca646bA9dE766d2Ca55310beF81d",
+    ],
+  },
   //"": {default: ""}
 };
+
+/** BubbleSwap pools: string (single) or string[] (multiple per token). */
+export function normalizeBubblePools(bubble) {
+  if (bubble == null || bubble === "") return [];
+  return (Array.isArray(bubble) ? bubble : [bubble]).filter(Boolean);
+}
+
+/** Flat tabs for UI: default + each bubble pool with stable keys (bubble-0, bubble-1, …). */
+export function getStakingPoolTabs(poolObj = {}) {
+  const tabs = [];
+  if (poolObj.default) {
+    tabs.push({
+      key: "default",
+      poolType: "default",
+      poolAddress: poolObj.default,
+      label: "Shido Staking",
+      labelSuffix: "",
+    });
+  }
+  const bubbles = normalizeBubblePools(poolObj.bubble);
+  bubbles.forEach((addr, i) => {
+    tabs.push({
+      key: `bubble-${i}`,
+      poolType: "bubble",
+      bubbleIndex: i,
+      poolAddress: addr,
+      label: "BubbleSwap",
+      labelSuffix: bubbles.length > 1 ? ` (${i + 1})` : "",
+    });
+  });
+  return tabs;
+}
 // 1. Move your images from /src/assets/ to /public/assets/
 // 2. Update the map to use lowercase keys and root-relative paths:
 

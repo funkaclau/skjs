@@ -139,6 +139,8 @@ export const PRESET_POOLS = [
   { label: "DESHI / SDS — 1%",     address: "0x0AB9Ce663A304E1De114d6D1b75d37a68aCa2111" },
   { label: "CWK / ILCFNBR — 1%",     address: "0x5248D7Aa35AeCaDF0f3282B3AA3b272C636D400e" },
   { label: "RAKUN / KENSEI — 1%",  address: "0xf4206e9a6ee82b75e0ae201fff24b730c12bc513" },
+  { label: "RAKUN / CAT — 1% (secondary)", address: "0x6b4932690deC7AdBFb25258FdBA03AfF030E0a22" },
+  { label: "CAT / KENSEI — 1% (secondary)", address: "0x5861a852c568762e79287B62a1c173390c0682F2" },
   { label: "P.Coffee / WSHIDO — 1%",  address: "0x2778Ae652C46e4a9B6F797Fce77F6e38Ba2F2218" },
   { label: "WSHIDO / CAT — 1%",  address: "0xD348989F88Cc0bCCF71ff28D554597F8e17A4a8e" },
   
@@ -218,11 +220,95 @@ export const EXTRA_POOLS = [
 ];
 
 /* =========================================================
+   Dominant-token registry (USD spread across sibling pools)
+   ========================================================= */
+
+export const DOMINANT_GROUPS = [
+  {
+    symbol: "KIDDO",
+    pools: [
+      "0x76F2562B8826B14e0F0362724eC3887fbc62FB74",
+      "0x23B1Ba5F070253bEc76F1db8a890A67842662fA8",
+    ],
+  },
+  {
+    symbol: "NERD",
+    pools: [
+      "0x0fb5fa84d8ee3d94d08ec428da98e10977a0aff3",
+      "0x23B1Ba5F070253bEc76F1db8a890A67842662fA8",
+    ],
+  },
+  {
+    symbol: "SHDX",
+    pools: [
+      "0x0cd72bfeed75ea4e1a7c5928aa9d9ba40312a876",
+      "0x8ca407c543c120aa0a12474ba50aaa937e682df7",
+    ],
+  },
+  {
+    symbol: "sASTER",
+    pools: [
+      "0x406fcb19a0f44a77c007b378e83162f016b00303",
+      "0xc2a122fcc3991edee3e573b168f060d5c76fe884",
+    ],
+  },
+  {
+    symbol: "ILCFNBR",
+    pools: [
+      "0xf5c547c7821ee9b836e2a5a6d08ce74b15f94d47",
+      "0x8ebe9435b60bea828870ed62a5e62d9faf7482de",
+      "0x8ca407c543c120aa0a12474ba50aaa937e682df7",
+      "0xc2a122fcc3991edee3e573b168f060d5c76fe884",
+      "0x209a1d69249c984d85aa5d5e333eb65d2e2aed7c",
+      "0x76f933337dea9a638eb9b3adf94c21d1832d7ece",
+      "0x5248D7Aa35AeCaDF0f3282B3AA3b272C636D400e",
+    ],
+  },
+  {
+    symbol: "BUSHIDO",
+    pools: [
+      "0x8ebe9435b60bea828870ed62a5e62d9faf7482de",
+      "0x89a2b65b168677aea07cc7146e6d0b2c911927a0",
+    ],
+  },
+  {
+    symbol: "CWK",
+    pools: ["0x5248D7Aa35AeCaDF0f3282B3AA3b272C636D400e"],
+  },
+  {
+    symbol: "CAT",
+    pools: [
+      "0xD348989F88Cc0bCCF71ff28D554597F8e17A4a8e",
+      "0x6b4932690deC7AdBFb25258FdBA03AfF030E0a22",
+      "0x5861a852c568762e79287B62a1c173390c0682F2",
+    ],
+  },
+  {
+    symbol: "RAKUN",
+    pools: [
+      "0xf4206e9a6ee82b75e0ae201fff24b730c12bc513",
+      "0x6b4932690deC7AdBFb25258FdBA03AfF030E0a22",
+    ],
+  },
+  {
+    symbol: "KENSEI",
+    pools: [
+      "0x2f4cdf4ad2203d5bca9ccb5485727d89603e2e39",
+      "0xf4206e9a6ee82b75e0ae201fff24b730c12bc513",
+      "0x5861a852c568762e79287B62a1c173390c0682F2",
+    ],
+  },
+  {
+    symbol: "Salt",
+    pools: ["0x76f933337dea9a638eb9b3adf94c21d1832d7ece"],
+  },
+];
+
+/* =========================================================
    Convenience: quick “pool hints by symbol”
    ========================================================= */
 
-// Your swap engine can use this to pre-suggest routing options in UI.
-// Keep it lightweight; you can expand as needed.
+// Single source for swap / quoter routing hints (merged from former price.js + markets).
 export const ROUTE_HINTS_BY_SYMBOL = {
   WSHIDO: [WSHIDO_USDC_POOL],
   KIDDO: [
@@ -233,23 +319,36 @@ export const ROUTE_HINTS_BY_SYMBOL = {
     "0x0fb5fa84d8ee3d94d08ec428da98e10977a0aff3",
     "0x23B1Ba5F070253bEc76F1db8a890A67842662fA8",
   ],
-  ILCFNBR: [
-    //"0xf5c547c7821ee9b836e2a5a6d08ce74b15f94d47",
+  SHDX: [
     "0x8ca407c543c120aa0a12474ba50aaa937e682df7",
-    //"0x209a1d69249c984d85aa5d5e333eb65d2e2aed7c",
-    "0x76f933337dea9a638eb9b3adf94c21d1832d7ece", // SALT/ILCFNBR if you enable it
-    "0x8ebe9435b60bea828870ed62a5e62d9faf7482de", // bushido /ILC
-    "0xc2a122fcc3991edee3e573b168f060d5c76fe884", // saster/ilc
-    "0x02c211bda18babca1c1002296f55dd2eefffb45c", //SDS
-    "0xdB798cF512Af4F7E41AE4Bf4b7f20CDF74Bc21f9", // CWK
+    "0x0cd72bfeed75ea4e1a7c5928aa9d9ba40312a876",
   ],
-
-  CHICK: [
-    //"0x209a1d69249c984d85aa5d5e333eb65d2e2aed7c", // china
-    "0x600c9561b00E3Bc569211dbb47aC134fD46D6746"
+  sASTER: ["0x406fcb19a0f44a77c007b378e83162f016b00303"],
+  ILCFNBR: [
+    "0xf5c547c7821ee9b836e2a5a6d08ce74b15f94d47",
+    "0x8ebe9435b60bea828870ed62a5e62d9faf7482de",
+    "0x8ca407c543c120aa0a12474ba50aaa937e682df7",
+    "0xc2a122fcc3991edee3e573b168f060d5c76fe884",
+    "0x7c447e5bdac8f5c14112dec1b5102654da38a936",
+    "0x209a1d69249c984d85aa5d5e333eb65d2e2aed7c",
+    "0x76f933337dea9a638eb9b3adf94c21d1832d7ece",
+    "0x5248D7Aa35AeCaDF0f3282B3AA3b272C636D400e",
+    "0x02c211bda18babca1c1002296f55dd2eefffb45c",
   ],
-  IPN: [
-    //"0xb5a9efd0da7f7c50419dee016a30f81ddad43564", //ILC
-    "0x2dcb26ff2954c8797864b91dba3c4b8f9d294b21"
-  ]
+  CHICK: ["0x600c9561b00E3Bc569211dbb47aC134fD46D6746"],
+  IPN: ["0x2dcb26ff2954c8797864b91dba3c4b8f9d294b21"],
+  CAT: [
+    "0xD348989F88Cc0bCCF71ff28D554597F8e17A4a8e",
+    "0x6b4932690deC7AdBFb25258FdBA03AfF030E0a22",
+    "0x5861a852c568762e79287B62a1c173390c0682F2",
+  ],
+  RAKUN: [
+    "0xf4206e9a6ee82b75e0ae201fff24b730c12bc513",
+    "0x6b4932690deC7AdBFb25258FdBA03AfF030E0a22",
+  ],
+  KENSEI: [
+    "0x2f4cdf4ad2203d5bca9ccb5485727d89603e2e39",
+    "0xf4206e9a6ee82b75e0ae201fff24b730c12bc513",
+    "0x5861a852c568762e79287B62a1c173390c0682F2",
+  ],
 };
