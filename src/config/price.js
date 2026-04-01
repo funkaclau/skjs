@@ -47,6 +47,7 @@ const FULL_TOKEN_LIST = [
   { address: "0x9ccE1FD369E92004f2985035Ba5F319013D1Eff7", symbol: "GNUS", name: "GNUS", decimals: 18 },
     { address: "0xF84B713c7a6e3DA38a96049A4E94dA751e536a83", symbol: "NGEN", name: "NanoGen", decimals: 18 },
   {address: "0x8442768f6B50Ff7cA855EC3405B2a9A535088aEA", symbol: "ENQI", name: "Enerqi", decimals: 18},
+  { address: "0xACA8A5784091b16AA4937E26eC28f62F8BE23f29", symbol: "CAT", name: "Crazy Cat", decimals: 18 },
   
 ];
 // { address: "", symbol: "", name: "", decimals: 18 },
@@ -84,6 +85,7 @@ const PRESET_POOLS = [
   { label: "WSHIDO / HODLJEET - 1%", address: "0xfe0043be9b3f16a54416635cc8f6bf9a2696a0a4"},
   { label: "IPN / WSHIDO - 1%", address: "0x2dcb26ff2954c8797864b91dba3c4b8f9d294b21"},
   { label: "NINJA / WSHIDO - 1%", address: "0x7ad1bbee1e2486c0af8377c6de00daa8210c75d8"},
+  { label: "WSHIDO / CAT — 1%", address: "0xD348989F88Cc0bCCF71ff28D554597F8e17A4a8e" },
 
 ];
 
