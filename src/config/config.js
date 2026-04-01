@@ -211,7 +211,7 @@ export const TOKEN_IMAGE_MAP = {
   "0xdB798cF512Af4F7E41AE4Bf4b7f20CDF74Bc21f9": "/assets/chinawok.jpg",
   "0xee1fc22381e6b6bb5ee3bf6b5ec58df6f5480df8": "/assets/usdc.png", // USDC
   "0x01396a82fa815a22b3b7b9c68c2b4a322c076c2b": "/assets/shidocoffee.png",
-  
+  "0xACA8A5784091b16AA4937E26eC28f62F8BE23f29": "/assets/cat.jpg"
 };
 
 // Vault = 0x891B0B479C3184789B210cce9ec8011A9fE7B278
