@@ -96,6 +96,7 @@ export const FULL_TOKEN_LIST = [
   { address: "0xc3a8815291af5a506308d5efbef337a914cdb452", symbol: "QBN", name: "Qubiton", decimals: 18 },
   { address: "0x9ccE1FD369E92004f2985035Ba5F319013D1Eff7", symbol: "GNUS", name: "GNUS", decimals: 18 },
     { address: "0xF84B713c7a6e3DA38a96049A4E94dA751e536a83", symbol: "NGEN", name: "NanoGen", decimals: 18 },
+    {address: "0xACA8A5784091b16AA4937E26eC28f62F8BE23f29", symbol: "CAT", name: "Crazy Cat", decimals: 18},
 ];
 
 
@@ -139,7 +140,7 @@ export const PRESET_POOLS = [
   { label: "CWK / ILCFNBR — 1%",     address: "0x5248D7Aa35AeCaDF0f3282B3AA3b272C636D400e" },
   { label: "RAKUN / KENSEI — 1%",  address: "0xf4206e9a6ee82b75e0ae201fff24b730c12bc513" },
   { label: "P.Coffee / WSHIDO — 1%",  address: "0x2778Ae652C46e4a9B6F797Fce77F6e38Ba2F2218" },
-  { label: " /  — 1%",  address: "" },
+  { label: "WSHIDO / CAT — 1%",  address: "0xD348989F88Cc0bCCF71ff28D554597F8e17A4a8e" },
   
   
   
