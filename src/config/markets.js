@@ -283,8 +283,6 @@ export const DOMINANT_GROUPS = [
     symbol: "CAT",
     pools: [
       "0xD348989F88Cc0bCCF71ff28D554597F8e17A4a8e",
-      "0x6b4932690deC7AdBFb25258FdBA03AfF030E0a22",
-      "0x5861a852c568762e79287B62a1c173390c0682F2",
       "0x2f79BcEb8AEe9885D41B47C5204D7e2B6d86C827",
     ],
   },
@@ -299,7 +297,6 @@ export const DOMINANT_GROUPS = [
     symbol: "RAKUN",
     pools: [
       "0xf4206e9a6ee82b75e0ae201fff24b730c12bc513",
-      "0x6b4932690deC7AdBFb25258FdBA03AfF030E0a22",
     ],
   },
   {
@@ -307,7 +304,6 @@ export const DOMINANT_GROUPS = [
     pools: [
       "0x2f4cdf4ad2203d5bca9ccb5485727d89603e2e39",
       "0xf4206e9a6ee82b75e0ae201fff24b730c12bc513",
-      "0x5861a852c568762e79287B62a1c173390c0682F2",
     ],
   },
   {
@@ -351,8 +347,6 @@ export const ROUTE_HINTS_BY_SYMBOL = {
   IPN: ["0x2dcb26ff2954c8797864b91dba3c4b8f9d294b21"],
   CAT: [
     "0xD348989F88Cc0bCCF71ff28D554597F8e17A4a8e",
-    "0x6b4932690deC7AdBFb25258FdBA03AfF030E0a22",
-    "0x5861a852c568762e79287B62a1c173390c0682F2",
     "0x2f79BcEb8AEe9885D41B47C5204D7e2B6d86C827",
   ],
   PCOFFEE: [
@@ -361,11 +355,9 @@ export const ROUTE_HINTS_BY_SYMBOL = {
   ],
   RAKUN: [
     "0xf4206e9a6ee82b75e0ae201fff24b730c12bc513",
-    "0x6b4932690deC7AdBFb25258FdBA03AfF030E0a22",
   ],
   KENSEI: [
     "0x2f4cdf4ad2203d5bca9ccb5485727d89603e2e39",
     "0xf4206e9a6ee82b75e0ae201fff24b730c12bc513",
-    "0x5861a852c568762e79287B62a1c173390c0682F2",
   ],
 };
