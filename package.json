@@ -5,7 +5,9 @@
   "type": "module",
   "main": "./src/index.js",
   "exports": {
-    ".": "./src/index.js"
+    ".": "./src/index.js",
+    "./utils/address.js": "./src/utils/address.js",
+    "./utils/bigint.js": "./src/utils/bigint.js"
   },
   "keywords": [
     "web3",

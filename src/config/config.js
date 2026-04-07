@@ -36,6 +36,8 @@ export const CONTRACTS = {
     PTF: "0xB0B228476Fa26140e6C8D04d437Cd38f47003fCC",
     NFTStaking: "0xE8aB4aa3ADF86c53C42109ba8f9e06923CF0022f",
     NFTStakeFactory: "0xcAC35320F45f316482B9A42dF1fd054f4476eB4e",
+    /** NERDArchives primary sales / redemption pool (Shido mainnet) */
+    NerdArchivesDrop: "0x64953E708B14799A281e459E3542d43c30451c3B",
 };
 
 export const WHITELISTED_TOKENS = {
