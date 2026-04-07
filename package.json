@@ -1,13 +1,17 @@
 {
   "name": "skjs",
-  "version": "1.0.2",
+  "version": "1.0.3",
   "description": "ShidoKid JS utilities",
   "type": "module",
   "main": "./src/index.js",
   "exports": {
     ".": "./src/index.js",
     "./utils/address.js": "./src/utils/address.js",
-    "./utils/bigint.js": "./src/utils/bigint.js"
+    "./utils/bigint.js": "./src/utils/bigint.js",
+    "./utils/price.js": "./src/utils/price.js",
+    "./config/price.js": "./src/config/price.js",
+    "./config/abi/stakingOG.js": "./src/config/abi/stakingOG.js",
+    "./config/abi/nftstake.js": "./src/config/abi/nftstake.js"
   },
   "keywords": [
     "web3",
