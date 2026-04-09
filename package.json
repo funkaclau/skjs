@@ -11,7 +11,9 @@
     "./utils/price.js": "./src/utils/price.js",
     "./config/price.js": "./src/config/price.js",
     "./config/abi/stakingOG.js": "./src/config/abi/stakingOG.js",
-    "./config/abi/nftstake.js": "./src/config/abi/nftstake.js"
+    "./config/abi/nftstake.js": "./src/config/abi/nftstake.js",
+    "./config/abi/shidoDexStaking.js": "./src/config/abi/shidoDexStaking.js",
+    "./utils/tokenImage.js": "./src/utils/tokenImage.js"
   },
   "keywords": [
     "web3",

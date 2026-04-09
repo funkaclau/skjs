@@ -1,4 +1,4 @@
-import { TOKEN_IMAGE_MAP } from "../config";
+import { TOKEN_IMAGE_MAP } from "../config/config.js";
 
 const FALLBACK_SYMBOL_IMAGE = {
   WSHIDO: "/assets/wshido.png",

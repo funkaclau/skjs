@@ -55,6 +55,7 @@ import {LAUNCHPAD_V2_ABI} from "./launchpadV2";
 import { LAUNCHPAD_FACTORY } from "./launchpadFactory";
 import NFT_STAKE_FACTORY_ABI from "./nftStakeFactory";
 import {LAUNCHPAD_V11_ABI} from "./LaunchpadV11"
+import {BATCH_V2_ABI} from "./batchV2";
 export {
     BATCH_ABI,
     TAG,
@@ -73,5 +74,6 @@ export {
     LAUNCHPAD_FACTORY,
     NFT_STAKE_FACTORY_ABI,
     LAUNCHPAD_V11_ABI,
-    MULTICALL
+    MULTICALL,
+    BATCH_V2_ABI
 };

@@ -11,7 +11,8 @@ import {
     STAKING_ABI,
     NFT_STAKING_ABI,
     VAULT_V1_ABI,
-    MULTICALL
+    MULTICALL,
+    BATCH_V2_ABI
 
 } from "./abi";
 import {
@@ -24,6 +25,7 @@ import {POOL_ABI, Q192, Q96, WSHIDO_USDC_POOL, prettySymbol, EXPLICIT_MAP, QUOTE
 import {PRESET_POOLS, POOL_REGISTRY, RPC_URL, FULL_TOKEN_LIST, ROUTE_HINTS_BY_SYMBOL} from "./markets"
 export {
     BATCH_ABI,
+    BATCH_V2_ABI,
     TAG,
     VoucherManager,
     TokenFactoryABI,
