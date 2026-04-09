@@ -15,7 +15,8 @@ import {
     STAKING_ABI,
     NFT_STAKING_ABI,
     VAULT_V1_ABI,
-    MULTICALL
+    MULTICALL,
+    BATCH_V2_ABI,
 
 } from "./config/abi";
 import {
@@ -48,6 +49,7 @@ import {
 } from "./config/markets"
 export {
     BATCH_ABI,
+    BATCH_V2_ABI,
     TAG,
     VoucherManager,
     TokenFactoryABI,
