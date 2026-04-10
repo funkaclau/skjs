@@ -19,6 +19,8 @@ import {
 
 export const CONTRACTS = {
     Stash: "0x5B73743d6e99E911e6C412C0BcA9a702475F0595",
+    /** Batch Transfer V2 deployment; if empty, consumers fall back to BatchShi20 (legacy ABI). */
+    BatchV2: "",
     BatchShi20: "0x1AD0D74967d8c91d88D88aA229a5DAf3e46538B6",
     BatchShido: "0xA7E6a9fA8847Fbad72477e63704008AFF8E3e385",
     PreSale: "0xdD75c1a25C3bc4874C00f33C8639316dc819F34c",
@@ -101,7 +103,10 @@ export const WHITELISTED_COLLECTIONS = {
     "0x5782fDaA53bAB4625B2ABf51aE73eb6228Bf6Ec8": "Shidoshi Ninja's",
     "0xDcA08690dEFA9Bbbb0FA21103a5F9E10B545e613": "Trash Mafia",
     "0xba10879b62d829ddd541bb9aee9654cfa11c8429": "Shinobi Warriors",
-    "0xb65ef0BDb1822f875f10AfE9BEC3bE674d38B11A": "test"
+    "0x5DeeaAeC8B51e80C2Fee451bc4dc014E91f9aD4c": "CRAZY CHICKEN NFT Part 1",
+    "0xF8Df8d12024B1f8fA0578Ae166534165EAF87a9C": "PixelTycoons",
+    "0x8782C1130FEc668724C700380e1DADe9b54F37D7": "Nerd Operations",
+    //"0xb65ef0BDb1822f875f10AfE9BEC3bE674d38B11A": "test"
 };
 
 export const GATEWAYS = {

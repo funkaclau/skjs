@@ -1,5 +1,13 @@
 
+/** Default JSON-RPC (live / state). May not retain full historical logs — use `RPC_URL_ARCHIVE` for `eth_getLogs`. */
 export const RPC_URL = "https://evm.shidoscan.net/";
+
+/**
+ * Archive node — use for historical `eth_getLogs` / `getPastEvents` (e.g. ERC-721 Transfer discovery).
+ * Public Shido endpoint often prunes old receipts; without archive, scans from genesis can return empty.
+ */
+export const RPC_URL_ARCHIVE =
+  "https://shido-mainnet-archive-lb-nw5es9.zeeve.net/USjg7xqUmCZ4wCsqEOOE/rpc";
 
 // Core tokens (you gave these)
 export const WSHIDO_ADDR = "0x8cbafFD9b658997E7bf87E98FEbF6EA6917166F7";
@@ -144,7 +152,7 @@ export const PRESET_POOLS = [
   { label: "RAKUN / KENSEI — 1%",  address: "0xf4206e9a6ee82b75e0ae201fff24b730c12bc513" },
   //{ label: "RAKUN / CAT — 1% (secondary)", address: "0x6b4932690deC7AdBFb25258FdBA03AfF030E0a22" },
   //{ label: "CAT / KENSEI — 1% (secondary)", address: "0x5861a852c568762e79287B62a1c173390c0682F2" },
-  { label: "PCOFFEE / CAT — 1% (secondary)", address: "0x2f79BcEb8AEe9885D41B47C5204D7e2B6d86C827" },
+  //{ label: "PCOFFEE / CAT — 1% (secondary)", address: "0x2f79BcEb8AEe9885D41B47C5204D7e2B6d86C827" },
   { label: "P.Coffee / WSHIDO — 1%",  address: "0x2778Ae652C46e4a9B6F797Fce77F6e38Ba2F2218" },
   { label: "WSHIDO / CAT — 1%",  address: "0xD348989F88Cc0bCCF71ff28D554597F8e17A4a8e" },
   
@@ -157,10 +165,10 @@ export const PRESET_POOLS = [
 
   //{ label: "CHICK / ILCFNBR — 1% (odd pair)", address: "0x209a1d69249c984d85aa5d5e333eb65d2e2aed7c" },
   { label: "ILCFNBR / SHDX — 1% (odd pair)", address: "0x8ca407c543c120aa0a12474ba50aaa937e682df7" },
-  { label: "SALT / ILCFNBR — 1% (odd pair)", address: "0x76f933337dea9a638eb9b3adf94c21d1832d7ece" },
+  //{ label: "SALT / ILCFNBR — 1% (odd pair)", address: "0x76f933337dea9a638eb9b3adf94c21d1832d7ece" },
   { label: "BUSHIDO / ILCFNBR — 1% (odd pair)", address: "0x8ebe9435b60bea828870ed62a5e62d9faf7482de" },
   { label: "ILCFNBR / SDS — 1% (odd pair)", address: "0x02c211bda18babca1c1002296f55dd2eefffb45c" },
-  { label: "sAster / ILCFNBR — 1% (odd pair)", address: "0xc2a122fcc3991edee3e573b168f060d5c76fe884" },
+  //{ label: "sAster / ILCFNBR — 1% (odd pair)", address: "0xc2a122fcc3991edee3e573b168f060d5c76fe884" },
   // { label: "HODLJEET / ILCFNBR — 1% (odd pair)", address: "0xac14f719c2ccdfca3759a6ad2f51b10b5bc91046" },
   //{ label: "0xded / ILCFNBR — 1% (odd pair)", address: "0x7c447e5bdac8f5c14112dec1b5102654da38a936" },
   //{ label: "NERD / ILCFNBR — 1% (odd pair)", address: "0x41aefa3248d3fbc4cb7c1d92e5e70870fa923135" },
@@ -211,8 +219,8 @@ export const EXTRA_POOLS = [
 
   { label: "CHICK / ILCFNBR — 1% (odd pair)", address: "0x209a1d69249c984d85aa5d5e333eb65d2e2aed7c" },
   { label: "ILCFNBR / SHDX — 1% (odd pair)", address: "0x8ca407c543c120aa0a12474ba50aaa937e682df7" },
-  { label: "SALT / ILCFNBR — 1% (odd pair)", address: "0x76f933337dea9a638eb9b3adf94c21d1832d7ece" },
-  { label: "BUSHIDO / ILCFNBR — 1% (odd pair)", address: "0x8ebe9435b60bea828870ed62a5e62d9faf7482de" },
+  //{ label: "SALT / ILCFNBR — 1% (odd pair)", address: "0x76f933337dea9a638eb9b3adf94c21d1832d7ece" },
+  //{ label: "BUSHIDO / ILCFNBR — 1% (odd pair)", address: "0x8ebe9435b60bea828870ed62a5e62d9faf7482de" },
   { label: "ILCFNBR / SDS — 1% (odd pair)", address: "0x02c211bda18babca1c1002296f55dd2eefffb45c" },
   { label: "sAster / ILCFNBR — 1% (odd pair)", address: "0xc2a122fcc3991edee3e573b168f060d5c76fe884" },
   { label: "HODLJEET / ILCFNBR — 1% (odd pair)", address: "0xac14f719c2ccdfca3759a6ad2f51b10b5bc91046" },
@@ -253,7 +261,7 @@ export const DOMINANT_GROUPS = [
     symbol: "sASTER",
     pools: [
       "0x406fcb19a0f44a77c007b378e83162f016b00303",
-      "0xc2a122fcc3991edee3e573b168f060d5c76fe884",
+      //"0xc2a122fcc3991edee3e573b168f060d5c76fe884",
     ],
   },
   {
@@ -262,9 +270,9 @@ export const DOMINANT_GROUPS = [
       "0xf5c547c7821ee9b836e2a5a6d08ce74b15f94d47",
       "0x8ebe9435b60bea828870ed62a5e62d9faf7482de",
       "0x8ca407c543c120aa0a12474ba50aaa937e682df7",
-      "0xc2a122fcc3991edee3e573b168f060d5c76fe884",
+      //"0xc2a122fcc3991edee3e573b168f060d5c76fe884",
       "0x209a1d69249c984d85aa5d5e333eb65d2e2aed7c",
-      "0x76f933337dea9a638eb9b3adf94c21d1832d7ece",
+      //"0x76f933337dea9a638eb9b3adf94c21d1832d7ece",
       "0x5248D7Aa35AeCaDF0f3282B3AA3b272C636D400e",
     ],
   },
@@ -283,14 +291,14 @@ export const DOMINANT_GROUPS = [
     symbol: "CAT",
     pools: [
       "0xD348989F88Cc0bCCF71ff28D554597F8e17A4a8e",
-      "0x2f79BcEb8AEe9885D41B47C5204D7e2B6d86C827",
+      //"0x2f79BcEb8AEe9885D41B47C5204D7e2B6d86C827",
     ],
   },
   {
     symbol: "PCOFFEE",
     pools: [
       "0x2778ae652c46e4a9b6f797fce77f6e38ba2f2218",
-      "0x2f79BcEb8AEe9885D41B47C5204D7e2B6d86C827",
+      //"0x2f79BcEb8AEe9885D41B47C5204D7e2B6d86C827",
     ],
   },
   {
@@ -308,7 +316,10 @@ export const DOMINANT_GROUPS = [
   },
   {
     symbol: "Salt",
-    pools: ["0x76f933337dea9a638eb9b3adf94c21d1832d7ece"],
+    pools: [
+      "0xfac4551574954b503adf7f352c10f5ffa39e6449",
+      //"0x76f933337dea9a638eb9b3adf94c21d1832d7ece"
+    ],
   },
 ];
 
@@ -336,10 +347,10 @@ export const ROUTE_HINTS_BY_SYMBOL = {
     "0xf5c547c7821ee9b836e2a5a6d08ce74b15f94d47",
     "0x8ebe9435b60bea828870ed62a5e62d9faf7482de",
     "0x8ca407c543c120aa0a12474ba50aaa937e682df7",
-    "0xc2a122fcc3991edee3e573b168f060d5c76fe884",
+    //"0xc2a122fcc3991edee3e573b168f060d5c76fe884",
     "0x7c447e5bdac8f5c14112dec1b5102654da38a936",
     "0x209a1d69249c984d85aa5d5e333eb65d2e2aed7c",
-    "0x76f933337dea9a638eb9b3adf94c21d1832d7ece",
+    //"0x76f933337dea9a638eb9b3adf94c21d1832d7ece",
     "0x5248D7Aa35AeCaDF0f3282B3AA3b272C636D400e",
     "0x02c211bda18babca1c1002296f55dd2eefffb45c",
   ],
@@ -347,11 +358,11 @@ export const ROUTE_HINTS_BY_SYMBOL = {
   IPN: ["0x2dcb26ff2954c8797864b91dba3c4b8f9d294b21"],
   CAT: [
     "0xD348989F88Cc0bCCF71ff28D554597F8e17A4a8e",
-    "0x2f79BcEb8AEe9885D41B47C5204D7e2B6d86C827",
+    //"0x2f79BcEb8AEe9885D41B47C5204D7e2B6d86C827",
   ],
   PCOFFEE: [
     "0x2778ae652c46e4a9b6f797fce77f6e38ba2f2218",
-    "0x2f79BcEb8AEe9885D41B47C5204D7e2B6d86C827",
+    //"0x2f79BcEb8AEe9885D41B47C5204D7e2B6d86C827",
   ],
   RAKUN: [
     "0xf4206e9a6ee82b75e0ae201fff24b730c12bc513",

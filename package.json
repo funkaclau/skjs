@@ -1,6 +1,6 @@
 {
   "name": "skjs",
-  "version": "1.0.3",
+  "version": "1.0.11",
   "description": "ShidoKid JS utilities",
   "type": "module",
   "main": "./src/index.js",
@@ -13,7 +13,10 @@
     "./config/abi/stakingOG.js": "./src/config/abi/stakingOG.js",
     "./config/abi/nftstake.js": "./src/config/abi/nftstake.js",
     "./config/abi/shidoDexStaking.js": "./src/config/abi/shidoDexStaking.js",
-    "./utils/tokenImage.js": "./src/utils/tokenImage.js"
+    "./utils/tokenImage.js": "./src/utils/tokenImage.js",
+    "./utils/ipfs.js": "./src/utils/ipfs.js",
+    "./utils/nft721.js": "./src/utils/nft721.js",
+    "./utils/nftMetadata.js": "./src/utils/nftMetadata.js"
   },
   "keywords": [
     "web3",

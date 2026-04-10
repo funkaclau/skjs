@@ -56,6 +56,9 @@ async function aggregate3Chunked(web3, calls) {
     const chunk = calls.slice(i, i + MAX_MULTICALL);
     const res = await mc.methods.aggregate3(chunk).call();
     out.push(...res);
+    if (i + MAX_MULTICALL < calls.length) {
+      await new Promise((r) => setTimeout(r, 50));
+    }
   }
   return out;
 }

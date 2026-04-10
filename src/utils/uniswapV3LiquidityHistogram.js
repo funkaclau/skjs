@@ -62,7 +62,9 @@ const POOL_EXT_ABI = [
   },
 ];
 
-const MAX_MULTICALL = 220;
+/** Chunk size for public RPCs; pauses between chunks reduce 503s on evm.shidoscan.net. */
+const MAX_MULTICALL = 100;
+const PAUSE_MS = 55;
 
 /** Uniswap v3 tick bounds (tick must be multiple of tickSpacing for positions). */
 const V3_MIN_TICK = -887272;
@@ -90,6 +92,9 @@ async function aggregate3Chunked(web3, calls) {
     const chunk = calls.slice(i, i + MAX_MULTICALL);
     const res = await mc.methods.aggregate3(chunk).call();
     out.push(...res);
+    if (i + MAX_MULTICALL < calls.length) {
+      await new Promise((r) => setTimeout(r, PAUSE_MS));
+    }
   }
   return out;
 }
