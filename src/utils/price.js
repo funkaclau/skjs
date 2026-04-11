@@ -1,5 +1,16 @@
-import {POOL_ABI, Q96, Q192, WSHIDO_USDC_POOL, prettySymbol, TOKEN_ABI  } from "../config"
+import {
+  POOL_ABI,
+  Q96,
+  Q192,
+  WSHIDO_USDC_POOL,
+  prettySymbol,
+  TOKEN_ABI,
+  MULTICALL,
+} from "../config";
 import { EXPLICIT_MAP, ROUTE_HINTS_BY_SYMBOL, PRESET_POOLS } from "../config/markets";
+
+/** Shido Multicall3 — same contract as `utils/multicallPools.js` (one `eth_call` batches many reads). */
+const MULTICALL3_ADDRESS = "0x49Bb5bfAAAe05e44d4922F236304b2e370DaF442";
 // Optional extra pools to help derive USD for tricky symbols
 
 const toChecksumOrNull = (web3, a) => {
@@ -106,24 +117,55 @@ const usdResolveInflight = new Map(); // key: token|bench|avoid -> Promise<value
 const USD_CACHE_TTL_MS = 15000;
 
 async function fetchPoolMeta(web3, poolAddr) {
-  const pool = new web3.eth.Contract(POOL_ABI, poolAddr);
-  const [t0, t1, fee, slot0] = await Promise.all([
-    pool.methods.token0().call(),
-    pool.methods.token1().call(),
-    pool.methods.fee().call(),
-    pool.methods.slot0().call(),
-  ]);
-  const c0 = new web3.eth.Contract(TOKEN_ABI, t0);
-  const c1 = new web3.eth.Contract(TOKEN_ABI, t1);
-  const [d0, s0, d1, s1] = await Promise.all([
-    c0.methods.decimals().call(), c0.methods.symbol().call(),
-    c1.methods.decimals().call(), c1.methods.symbol().call(),
-  ]);
+  const poolCs = web3.utils.toChecksumAddress(poolAddr);
+  const pool = new web3.eth.Contract(POOL_ABI, poolCs);
+  const multicall = new web3.eth.Contract(MULTICALL, MULTICALL3_ADDRESS);
+
+  const poolCalls = [
+    { target: poolCs, allowFailure: true, callData: pool.methods.slot0().encodeABI() },
+    { target: poolCs, allowFailure: true, callData: pool.methods.token0().encodeABI() },
+    { target: poolCs, allowFailure: true, callData: pool.methods.token1().encodeABI() },
+    { target: poolCs, allowFailure: true, callData: pool.methods.fee().encodeABI() },
+  ];
+  const poolRes = await multicall.methods.aggregate3(poolCalls).call();
+  const [r0, r1, r2, r3] = poolRes;
+  if (!r0?.success || !r1?.success || !r2?.success || !r3?.success) {
+    throw new Error("fetchPoolMeta: pool aggregate3 failed");
+  }
+
+  const decodedSlot0 = web3.eth.abi.decodeParameters(
+    ["uint160", "int24", "uint16", "uint16", "uint16", "uint8", "bool"],
+    r0.returnData
+  );
+  const sqrtPriceX96 = decodedSlot0[0].toString();
+  const t0 = web3.eth.abi.decodeParameter("address", r1.returnData);
+  const t1 = web3.eth.abi.decodeParameter("address", r2.returnData);
+  const feeU = web3.eth.abi.decodeParameter("uint24", r3.returnData);
+  const fee = Number(feeU);
+
+  const t0cs = web3.utils.toChecksumAddress(t0);
+  const t1cs = web3.utils.toChecksumAddress(t1);
+  const c0 = new web3.eth.Contract(TOKEN_ABI, t0cs);
+  const c1 = new web3.eth.Contract(TOKEN_ABI, t1cs);
+
+  const tokenCalls = [
+    { target: t0cs, allowFailure: true, callData: c0.methods.decimals().encodeABI() },
+    { target: t0cs, allowFailure: true, callData: c0.methods.symbol().encodeABI() },
+    { target: t1cs, allowFailure: true, callData: c1.methods.decimals().encodeABI() },
+    { target: t1cs, allowFailure: true, callData: c1.methods.symbol().encodeABI() },
+  ];
+  const tokRes = await multicall.methods.aggregate3(tokenCalls).call();
+
+  const d0 = tokRes[0]?.success ? Number(web3.eth.abi.decodeParameter("uint8", tokRes[0].returnData)) : 18;
+  const s0 = tokRes[1]?.success ? web3.eth.abi.decodeParameter("string", tokRes[1].returnData) : "???";
+  const d1 = tokRes[2]?.success ? Number(web3.eth.abi.decodeParameter("uint8", tokRes[2].returnData)) : 18;
+  const s1 = tokRes[3]?.success ? web3.eth.abi.decodeParameter("string", tokRes[3].returnData) : "???";
+
   return {
-    fee: Number(fee),
-    sqrtPriceX96: slot0.sqrtPriceX96,
-    token0: { address: t0, symbol: s0, decimals: Number(d0) },
-    token1: { address: t1, symbol: s1, decimals: Number(d1) },
+    fee,
+    sqrtPriceX96,
+    token0: { address: t0, symbol: s0, decimals: d0 },
+    token1: { address: t1, symbol: s1, decimals: d1 },
     __poolAddr: poolAddr,
   };
 }
@@ -397,19 +439,6 @@ async function resolveUsdPerToken(
   }
 }
 
-
-async function fetchDexhubPriceByAddress(addr) {
-  try {
-    const r = await fetch("https://dexhub.mavnode.io/api/v1/prices", {
-      headers: { "X-API-Key": "key_MSGkDgSUFyqMIKhQCZgHNKdGjmHj1kXB" }
-    });
-    const j = await r.json();
-    if (!j?.success) return null;
-    const t = j.data.find(x => (x.address || "").toLowerCase() === addr.toLowerCase());
-    if (!t) return null;
-    return Number(t.usdPrice);
-  } catch { return null; }
-}
 
 function getDisplayPairSymbols({ direction, invert, meta }) {
   // out per in (before invert)
