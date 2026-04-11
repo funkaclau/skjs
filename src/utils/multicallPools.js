@@ -2,20 +2,58 @@ import { MULTICALL } from "../config";
 import { midOutPerIn_from_slot0 } from "./price";
 const MULTICALL_ADDRESS = "0x49Bb5bfAAAe05e44d4922F236304b2e370DaF442";
 
-/** {@link multicallPools} — pool batch size, token meta batch size, pause between aggregate3 waves. */
+/** {@link multicallPools} — default batch size, token meta batch size, pause between aggregate3 waves. */
 export const MULTICALL_POOLS_TUNING = Object.freeze({
   /** Pools per Multicall3 batch (4 calls each: slot0, token0, token1, liquidity). */
-  POOLS_PER_AGGREGATE_BATCH: 20,
+  POOLS_PER_AGGREGATE_BATCH: 5,
   /** Unique tokens per Multicall3 batch (2 calls each: decimals, symbol). */
-  TOKENS_PER_AGGREGATE_BATCH: 20,
-  PAUSE_MS_BETWEEN_AGGREGATE_BATCHES: 90,
+  TOKENS_PER_AGGREGATE_BATCH: 8,
+  PAUSE_MS_BETWEEN_AGGREGATE_BATCHES: 120,
 });
 
-const POOLS_PER_AGGREGATE_BATCH = MULTICALL_POOLS_TUNING.POOLS_PER_AGGREGATE_BATCH;
-const TOKENS_PER_AGGREGATE_BATCH = MULTICALL_POOLS_TUNING.TOKENS_PER_AGGREGATE_BATCH;
-
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const PAUSE_BETWEEN_AGGREGATE_MS = MULTICALL_POOLS_TUNING.PAUSE_MS_BETWEEN_AGGREGATE_BATCHES;
+
+/**
+ * Effective tuning for one `multicallPools` / `resolveAllPrices` run (defaults + per-call overrides).
+ * @param {{
+ *   poolsPerAggregateBatch?: number,
+ *   POOLS_PER_AGGREGATE_BATCH?: number,
+ *   tokensPerAggregateBatch?: number,
+ *   TOKENS_PER_AGGREGATE_BATCH?: number,
+ *   pauseMsBetweenAggregateBatches?: number,
+ *   PAUSE_MS_BETWEEN_AGGREGATE_BATCHES?: number,
+ * }} [opts]
+ */
+export function resolveMulticallPoolsOpts(opts = {}) {
+  const pb =
+    opts.poolsPerAggregateBatch ??
+    opts.POOLS_PER_AGGREGATE_BATCH ??
+    MULTICALL_POOLS_TUNING.POOLS_PER_AGGREGATE_BATCH;
+  const tb =
+    opts.tokensPerAggregateBatch ??
+    opts.TOKENS_PER_AGGREGATE_BATCH ??
+    MULTICALL_POOLS_TUNING.TOKENS_PER_AGGREGATE_BATCH;
+  const pause =
+    opts.pauseMsBetweenAggregateBatches ??
+    opts.PAUSE_MS_BETWEEN_AGGREGATE_BATCHES ??
+    MULTICALL_POOLS_TUNING.PAUSE_MS_BETWEEN_AGGREGATE_BATCHES;
+  const pN = Number(pb);
+  const tN = Number(tb);
+  const pauseN = Number(pause);
+  return {
+    poolsPerAggregateBatch: Math.max(
+      1,
+      Math.min(80, Number.isFinite(pN) && pN > 0 ? pN : MULTICALL_POOLS_TUNING.POOLS_PER_AGGREGATE_BATCH)
+    ),
+    tokensPerAggregateBatch: Math.max(
+      1,
+      Math.min(80, Number.isFinite(tN) && tN > 0 ? tN : MULTICALL_POOLS_TUNING.TOKENS_PER_AGGREGATE_BATCH)
+    ),
+    pauseMsBetweenAggregateBatches: Number.isFinite(pauseN)
+      ? Math.max(0, Math.min(30_000, pauseN))
+      : MULTICALL_POOLS_TUNING.PAUSE_MS_BETWEEN_AGGREGATE_BATCHES,
+  };
+}
 
 const POOL_ABI = [
   {
@@ -81,7 +119,18 @@ function decodePoolChunk(web3, poolAddrsSlice, result) {
   return pools;
 }
 
-export async function multicallPools(web3, poolAddresses) {
+/**
+ * @param {import("web3").default} web3
+ * @param {string[]} poolAddresses
+ * @param {Parameters<typeof resolveMulticallPoolsOpts>[0]} [opts] Per-app tuning (smaller batches + longer pauses = gentler on public RPC).
+ */
+export async function multicallPools(web3, poolAddresses, opts = {}) {
+  const {
+    poolsPerAggregateBatch: POOLS_PER_AGGREGATE_BATCH,
+    tokensPerAggregateBatch: TOKENS_PER_AGGREGATE_BATCH,
+    pauseMsBetweenAggregateBatches: PAUSE_BETWEEN_AGGREGATE_MS,
+  } = resolveMulticallPoolsOpts(opts);
+
   const multicall = new web3.eth.Contract(MULTICALL, MULTICALL_ADDRESS);
   const validPools = poolAddresses.filter(
     (addr) => addr && typeof addr === "string" && addr.startsWith("0x")
@@ -146,8 +195,11 @@ export async function multicallPools(web3, poolAddresses) {
   }));
 }
 
-export async function resolveAllPrices(web3, poolAddresses, wshidoOraclePrice) {
-  const pools = await multicallPools(web3, poolAddresses);
+/**
+ * @param {Parameters<typeof resolveMulticallPoolsOpts>[0]} [multicallOpts] Forwarded to {@link multicallPools}.
+ */
+export async function resolveAllPrices(web3, poolAddresses, wshidoOraclePrice, multicallOpts = {}) {
+  const pools = await multicallPools(web3, poolAddresses, multicallOpts);
   const graph = {};
 
   const USDC = "0xeE1Fc22381e6B6bb5ee3bf6B5ec58DF6F5480dF8".toLowerCase();

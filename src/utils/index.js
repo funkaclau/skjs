@@ -1,4 +1,4 @@
-import { multicallPools, resolveAllPrices, MULTICALL_POOLS_TUNING } from "./multicallPools";
+import { multicallPools, resolveAllPrices, MULTICALL_POOLS_TUNING, resolveMulticallPoolsOpts } from "./multicallPools";
 import {multicallBalances} from "./multicallBalances";
 import { readNftPoolSummariesMulticall, NFT_POOL_SUMMARIES_MULTICALL_TUNING } from "./multicallNftPoolSummaries";
 import {copyToClipboard, shortenAddress} from "./address";
@@ -54,7 +54,7 @@ import {
   IPFS_GATEWAY_PINATA,
   IPFS_GATEWAY_IPFS_IO,
 } from "./ipfs";
-export {multicallBalances, multicallPools, MULTICALL_POOLS_TUNING, readNftPoolSummariesMulticall, NFT_POOL_SUMMARIES_MULTICALL_TUNING,
+export {multicallBalances, multicallPools, MULTICALL_POOLS_TUNING, resolveMulticallPoolsOpts, readNftPoolSummariesMulticall, NFT_POOL_SUMMARIES_MULTICALL_TUNING,
     copyToClipboard, shortenAddress,
     formatAmount, toBI, convertBigIntToFloat, calculateShidoForMaxPurchase, parseAmountToWei, 
     parseUnits, handleApproveAndRunSafe, handleApproveAndRunWeb3, handleApproveAndRun, formatNumberWithCommas,

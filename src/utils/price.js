@@ -146,6 +146,24 @@ async function getMetaCached(web3, addr) {
   }
 }
 
+/** Preset pool metas for `resolveUsdPerToken` graph (one in-flight load per `web3`; per-pool dedupe via `getMetaCached`). */
+const presetMetasForGraphByWeb3 = new WeakMap();
+
+async function loadPresetMetasForGraph(web3) {
+  let p = presetMetasForGraphByWeb3.get(web3);
+  if (!p) {
+    p = (async () => {
+      const addrs = PRESET_POOLS.map((x) => x?.address).filter(Boolean);
+      const rows = await Promise.all(
+        addrs.map((addr) => getMetaCached(web3, addr).catch(() => null))
+      );
+      return rows.filter(Boolean);
+    })();
+    presetMetasForGraphByWeb3.set(web3, p);
+  }
+  return p;
+}
+
 function midOutPerIn_from_slot0(sqrtPriceX96, dec0, dec1) {
   return price1Per0_from_sqrtP(sqrtPriceX96, dec0, dec1);
 }
@@ -255,14 +273,10 @@ async function resolveUsdPerToken(
     if (T === WSHIDO) return { usd: bench.usdPerWshido, route: ["WSHIDO → USDC (oracle)"] };
 
     // ----------------------------
-    // seed metas from presets
+    // seed metas from presets (+ optional route hints)
     // ----------------------------
-    const metas = [];
-    for (const p of PRESET_POOLS) {
-      try { metas.push(await getMetaCached(web3, p.address)); } catch {}
-    }
+    const metas = [...(await loadPresetMetasForGraph(web3))];
 
-    // (optional) route hints by symbol
     let tokenSym = null;
     for (const m of metas) {
       if ((m.token0.address || "").toLowerCase() === T) { tokenSym = prettySymbol(m.token0.symbol); break; }
@@ -270,12 +284,16 @@ async function resolveUsdPerToken(
     }
 
     const hints = (tokenSym && ROUTE_HINTS_BY_SYMBOL[tokenSym]) || [];
-    for (const addr of hints) {
-      try {
-        if (!metas.some(x => (x.__poolAddr || "").toLowerCase() === (addr || "").toLowerCase())) {
-          metas.push(await getMetaCached(web3, addr));
-        }
-      } catch {}
+    const hintAddrs = hints.filter(
+      (addr) =>
+        addr &&
+        !metas.some((x) => (x.__poolAddr || "").toLowerCase() === String(addr).toLowerCase())
+    );
+    if (hintAddrs.length) {
+      const extra = await Promise.all(
+        hintAddrs.map((addr) => getMetaCached(web3, addr).catch(() => null))
+      );
+      for (const m of extra) if (m) metas.push(m);
     }
 
   // ----------------------------
@@ -392,9 +410,6 @@ async function fetchDexhubPriceByAddress(addr) {
     return Number(t.usdPrice);
   } catch { return null; }
 }
-
-// NEW
-
 
 function getDisplayPairSymbols({ direction, invert, meta }) {
   // out per in (before invert)

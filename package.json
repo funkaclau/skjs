@@ -1,6 +1,6 @@
 {
   "name": "skjs",
-  "version": "1.0.13",
+  "version": "1.0.14",
   "description": "ShidoKid JS utilities",
   "type": "module",
   "main": "./src/index.js",

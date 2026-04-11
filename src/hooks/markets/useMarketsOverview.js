@@ -5,19 +5,13 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Web3 from "web3";
 import { multicallPools } from "../../utils/multicallPools";
+import { mapWithLimit } from "../../utils/mapWithLimit";
 import { RPC_URL, PRESET_POOLS, prettySymbol } from "../../config/markets";
-
-// Reuse your existing utils from swap
-import {
-  getMetaCached,
-  getWshidoUsdOracle,
-  resolveUsdPerToken,
-  midOutPerIn_from_slot0,
-  fmt8,
-  floorTo,
-} from "../../utils/price";
+import { getWshidoUsdOracle, midOutPerIn_from_slot0 } from "../../utils/price";
 
 // ---------- helpers ----------
+const TOKEN_REFRESH_CONCURRENCY = 6;
+
 const addrEq = (a, b) => (a && b) ? a.toLowerCase() === b.toLowerCase() : false;
 // dir meaning in your swap:
 // 0to1 => token0 in, token1 out
@@ -291,7 +285,6 @@ export function useMarketsOverview() {
         const pools = poolConfigs.map(p => p.address);
 
         const metas = await multicallPools(web3, pools);
-        console.log(metas)
 
         // after multicallPools returns metas
         const list = metas
@@ -356,56 +349,54 @@ export function useMarketsOverview() {
     setError("");
 
     try {
-      const results = await Promise.all(
-        readyTokens.map(async (tok) => {
-          try {
-            if (addrEq(tok.address, bench.usdcAddr)) return null;
-            if (addrEq(tok.address, bench.wshidoAddr)) return null;
+      const results = await mapWithLimit(readyTokens, TOKEN_REFRESH_CONCURRENCY, async (tok) => {
+        try {
+          if (addrEq(tok.address, bench.usdcAddr)) return null;
+          if (addrEq(tok.address, bench.wshidoAddr)) return null;
 
-            const routes = await listUsdAcrossPools(
-              web3,
-              bench,
-              tok.address,
-              poolMetas
-            );
+          const routes = await listUsdAcrossPools(
+            web3,
+            bench,
+            tok.address,
+            poolMetas
+          );
 
-            if (!routes || routes.length === 0) return null;
+          if (!routes || routes.length === 0) return null;
 
-            const bestBuy = routes[0];
-            const bestSell = routes[routes.length - 1];
+          const bestBuy = routes[0];
+          const bestSell = routes[routes.length - 1];
 
-            const buyUsd = Number(bestBuy?.usd);
-            const sellUsd = Number(bestSell?.usd);
+          const buyUsd = Number(bestBuy?.usd);
+          const sellUsd = Number(bestSell?.usd);
 
-            const spreadPct =
-              Number.isFinite(buyUsd) && buyUsd > 0 && Number.isFinite(sellUsd)
-                ? ((sellUsd / buyUsd) - 1) * 100
-                : null;
+          const spreadPct =
+            Number.isFinite(buyUsd) && buyUsd > 0 && Number.isFinite(sellUsd)
+              ? ((sellUsd / buyUsd) - 1) * 100
+              : null;
 
-            const buyDir = dirForAction(bestBuy.meta, tok.address, "buy");
-            const sellDir = dirForAction(bestSell.meta, tok.address, "sell");
+          const buyDir = dirForAction(bestBuy.meta, tok.address, "buy");
+          const sellDir = dirForAction(bestSell.meta, tok.address, "sell");
 
-            const buyUrl = makeSwapLink({ pool: bestBuy.pool, dir: buyDir });
-            const sellUrl = makeSwapLink({ pool: bestSell.pool, dir: sellDir });
+          const buyUrl = makeSwapLink({ pool: bestBuy.pool, dir: buyDir });
+          const sellUrl = makeSwapLink({ pool: bestSell.pool, dir: sellDir });
 
-            return {
-              token: tok,
-              routes,
-              bestBuy,
-              bestSell,
-              usdBuy: buyUsd,
-              usdSell: sellUsd,
-              spreadPct,
-              buyUrl,
-              sellUrl,
-              dex: null
-            };
-          } catch (e) {
-            console.warn("Token compute failed", tok.symbol, e);
-            return null;
-          }
-        })
-      );
+          return {
+            token: tok,
+            routes,
+            bestBuy,
+            bestSell,
+            usdBuy: buyUsd,
+            usdSell: sellUsd,
+            spreadPct,
+            buyUrl,
+            sellUrl,
+            dex: null
+          };
+        } catch (e) {
+          console.warn("Token compute failed", tok.symbol, e);
+          return null;
+        }
+      });
 
       setRows(results.filter(Boolean).sort((a, b) => (b.spreadPct ?? -1) - (a.spreadPct ?? -1)));
     } catch (e) {

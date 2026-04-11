@@ -1,13 +1,13 @@
 /**
- * ERC-20 `balanceOf` via **one** Multicall3 `aggregate3` over the full call list — no chunking or pauses here.
- * Large token lists can hit RPC payload limits; split upstream or extend this module if needed.
+ * ERC-20 `balanceOf` via Multicall3 `aggregate3`. By default one batch for the full list.
+ * Use `opts.maxTokensPerAggregate` + `opts.pauseMsBetweenChunks` when the RPC rejects large multicalls.
  */
 
-import Web3 from "web3";
 import { MULTICALL } from "../config";
 
 const MULTICALL_ADDRESS = "0x49Bb5bfAAAe05e44d4922F236304b2e370DaF442";
 
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 const ERC20_BALANCE_ABI = [
   { 
@@ -19,11 +19,24 @@ const ERC20_BALANCE_ABI = [
   }
 ];
 
-export async function multicallBalances(web3, userAddress, tokenAddresses) {
+/**
+ * @param {import("web3").default} web3
+ * @param {string} userAddress
+ * @param {string[]} tokenAddresses
+ * @param {{ maxTokensPerAggregate?: number, chunkSize?: number, pauseMsBetweenChunks?: number }} [opts]
+ */
+export async function multicallBalances(web3, userAddress, tokenAddresses, opts = {}) {
   if (!web3 || !userAddress || !web3.utils.isAddress(userAddress)) {
     console.warn("[multicallBalances] Invalid userAddress:", userAddress);
     return {};
   }
+  const maxPer =
+    opts.maxTokensPerAggregate ??
+    opts.chunkSize ??
+    Number.POSITIVE_INFINITY;
+  const chunkCap = Number.isFinite(maxPer) && maxPer > 0 ? Math.min(200, Math.floor(maxPer)) : Number.POSITIVE_INFINITY;
+  const pauseMs = Math.max(0, Math.min(30_000, Number(opts.pauseMsBetweenChunks) || 0));
+
   try {
     const multicall = new web3.eth.Contract(MULTICALL, MULTICALL_ADDRESS);
 
@@ -36,32 +49,47 @@ export async function multicallBalances(web3, userAddress, tokenAddresses) {
 
     if (validTokens.length === 0) return {};
 
-    const calls = [];
-    for (const tAddr of validTokens) {
-      const contract = new web3.eth.Contract(ERC20_BALANCE_ABI, tAddr);
-      if (!contract.methods || !contract.methods.balanceOf) {
-        console.warn("[multicallBalances] Invalid contract instance for:", tAddr);
-        continue;
-      }
-      
-      calls.push({
-        target: tAddr,
-        allowFailure: true,
-        callData: contract.methods.balanceOf(userAddress).encodeABI()
-      });
-    }
-
-    if (calls.length === 0) return {};
-
-    const results = await multicall.methods.aggregate3(calls).call();
     const balanceMap = {};
 
-    results.forEach((res, i) => {
-      const addr = validTokens[i].toLowerCase();
-      balanceMap[addr] = res.success
-        ? web3.eth.abi.decodeParameter("uint256", res.returnData).toString()
-        : "0";
-    });
+    const runChunk = async (tokensSlice) => {
+      const entries = [];
+      for (const tAddr of tokensSlice) {
+        const contract = new web3.eth.Contract(ERC20_BALANCE_ABI, tAddr);
+        if (!contract.methods?.balanceOf) {
+          console.warn("[multicallBalances] Invalid contract instance for:", tAddr);
+          continue;
+        }
+        entries.push({
+          tAddr,
+          callData: contract.methods.balanceOf(userAddress).encodeABI(),
+        });
+      }
+      if (entries.length === 0) return;
+      const calls = entries.map((e) => ({
+        target: e.tAddr,
+        allowFailure: true,
+        callData: e.callData,
+      }));
+      const results = await multicall.methods.aggregate3(calls).call();
+      entries.forEach((e, i) => {
+        const res = results[i];
+        const addr = e.tAddr.toLowerCase();
+        balanceMap[addr] = res?.success
+          ? web3.eth.abi.decodeParameter("uint256", res.returnData).toString()
+          : "0";
+      });
+    };
+
+    if (!Number.isFinite(chunkCap) || validTokens.length <= chunkCap) {
+      await runChunk(validTokens);
+      return balanceMap;
+    }
+
+    for (let i = 0; i < validTokens.length; i += chunkCap) {
+      const slice = validTokens.slice(i, i + chunkCap);
+      await runChunk(slice);
+      if (pauseMs > 0 && i + chunkCap < validTokens.length) await sleep(pauseMs);
+    }
 
     return balanceMap;
   } catch (err) {
