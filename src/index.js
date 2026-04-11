@@ -48,6 +48,18 @@ import {
   prettySymbol,
   UNISWAP_V3_NONFUNGIBLE_POSITION_MANAGER,
 } from "./config/markets"
+import {
+  NFT_COLLECTION_REGISTRY,
+  NFT_COLLECTION_BY_ADDRESS_LOWER,
+  SHIDO_WHITELISTED_COLLECTIONS,
+  SHIDO_COLLECTION_GATEWAYS,
+  getNftCollectionRegistryEntry,
+  resolveNftCollectionCoverUrl,
+  getNftCollectionUiMeta,
+  getNftCollectionListForUi,
+  getIpfsGatewayForNftCollection,
+  getBundledNftCollectionBannerUrl,
+} from "./config/nftCollectionRegistry.js";
 export {
     BATCH_ABI,
     BATCH_V2_ABI,
@@ -73,4 +85,14 @@ export {
     getStakingPoolTabs, normalizeBubblePools,
     ECOSYSTEM_TOOLS, socialLinks,
     UNISWAP_V3_NONFUNGIBLE_POSITION_MANAGER,
+    NFT_COLLECTION_REGISTRY,
+    NFT_COLLECTION_BY_ADDRESS_LOWER,
+    SHIDO_WHITELISTED_COLLECTIONS,
+    SHIDO_COLLECTION_GATEWAYS,
+    getNftCollectionRegistryEntry,
+    resolveNftCollectionCoverUrl,
+    getNftCollectionUiMeta,
+    getNftCollectionListForUi,
+    getIpfsGatewayForNftCollection,
+    getBundledNftCollectionBannerUrl,
 };

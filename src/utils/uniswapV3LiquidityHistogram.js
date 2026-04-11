@@ -62,9 +62,14 @@ const POOL_EXT_ABI = [
   },
 ];
 
-/** Chunk size for public RPCs; pauses between chunks reduce 503s on evm.shidoscan.net. */
-const MAX_MULTICALL = 100;
-const PAUSE_MS = 55;
+/** Batch size and pacing between Multicall3 chunks (see aggregate3Chunked in this file). */
+export const V3_LIQUIDITY_HISTOGRAM_MULTICALL_TUNING = Object.freeze({
+  MAX_CALLS_PER_CHUNK: 100,
+  PAUSE_MS_BETWEEN_CHUNKS: 55,
+});
+
+const MAX_MULTICALL = V3_LIQUIDITY_HISTOGRAM_MULTICALL_TUNING.MAX_CALLS_PER_CHUNK;
+const PAUSE_MS = V3_LIQUIDITY_HISTOGRAM_MULTICALL_TUNING.PAUSE_MS_BETWEEN_CHUNKS;
 
 /** Uniswap v3 tick bounds (tick must be multiple of tickSpacing for positions). */
 const V3_MIN_TICK = -887272;

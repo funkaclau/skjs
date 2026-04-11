@@ -45,3 +45,16 @@ export {
 };
 
 export {ECOSYSTEM_TOOLS, socialLinks} from "./ecosystem";
+
+export {
+  NFT_COLLECTION_REGISTRY,
+  NFT_COLLECTION_BY_ADDRESS_LOWER,
+  SHIDO_WHITELISTED_COLLECTIONS,
+  SHIDO_COLLECTION_GATEWAYS,
+  getNftCollectionRegistryEntry,
+  resolveNftCollectionCoverUrl,
+  getNftCollectionUiMeta,
+  getNftCollectionListForUi,
+  getIpfsGatewayForNftCollection,
+  getBundledNftCollectionBannerUrl,
+} from "./nftCollectionRegistry.js";

@@ -4,14 +4,66 @@
  */
 
 import { GATEWAYS, WHITELISTED_COLLECTIONS } from "../config/config.js";
+import { getNftCollectionRegistryEntry } from "../config/nftCollectionRegistry.js";
 import { getEnumerableNFTContract } from "./getContract.js";
 import { addrEq } from "./helpers.js";
 import { resolveTokenUriForFetch } from "./nft721.js";
 import { DEFAULT_IPFS_PUBLIC_GATEWAY } from "./ipfs.js";
+import { mapWithLimit } from "./mapWithLimit.js";
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 /** Shidoscan (Etherscan-compatible) `tokennfttx` endpoint — no trailing `&`. */
 export const SHIDOSCAN_TOKEN_NFT_TX =
   "https://shidoscan.net/api?module=account&action=tokennfttx";
+
+/** Shidoscan `token1155tx` — ERC-1155 transfers (complement to {@link SHIDOSCAN_TOKEN_NFT_TX} / ERC-721). */
+export const SHIDOSCAN_TOKEN1155_TX =
+  "https://shidoscan.net/api?module=account&action=token1155tx";
+
+/**
+ * Unique ERC-1155 token ids that appear in Shidoscan-indexed transfers for this wallet + contract.
+ * Does not prove current balance — confirm with on-chain `balanceOf` / `fetchErc1155BalancesForIds` in skjs.
+ *
+ * @param {string} account
+ * @param {string} contractAddress
+ * @param {{ offset?: number, page?: number, signal?: AbortSignal }} [options]
+ * @returns {Promise<string[]>} decimal token id strings
+ */
+export async function fetchShidoscanErc1155CandidateTokenIds(account, contractAddress, options = {}) {
+  const offset = options.offset ?? 5000;
+  const page = options.page ?? 1;
+  const acc = String(account).toLowerCase();
+  const ca = String(contractAddress);
+  const url = `${SHIDOSCAN_TOKEN1155_TX}&address=${encodeURIComponent(acc)}&contractaddress=${encodeURIComponent(ca)}&page=${page}&offset=${offset}&sort=asc`;
+
+  const res = await fetch(url, { signal: options.signal });
+  if (!res.ok) throw new Error(`Shidoscan HTTP ${res.status}`);
+  const data = await res.json();
+
+  if (String(data.status) === "0") {
+    const msg = String(data.message || "");
+    if (
+      /no transactions found|no record|not found|invalid action|no token transfers found/i.test(msg)
+    ) {
+      return [];
+    }
+    if (typeof data.result === "string") throw new Error(data.result || msg);
+    return [];
+  }
+
+  if (!Array.isArray(data.result)) return [];
+
+  const ids = new Set();
+  const caLower = ca.toLowerCase();
+  for (const tx of data.result) {
+    const rc = String(tx.contractAddress ?? "").toLowerCase();
+    if (rc && rc !== caLower) continue;
+    const id = String(tx.tokenID ?? tx.tokenId ?? "");
+    if (id) ids.add(id);
+  }
+  return [...ids];
+}
 
 /**
  * Token IDs the indexer attributes to this wallet for one NFT contract (last `to` per token wins).
@@ -133,12 +185,16 @@ export async function fetchIPFSMetadata(uri, collection, tokenId, opts = {}) {
  * (last transfer per token in ascending list wins — same as legacy behavior).
  *
  * @param {string} account wallet (0x…)
- * @param {{ whitelistedCollections?: Record<string, string>, signal?: AbortSignal }} [options]
+ * @param {{ whitelistedCollections?: Record<string, string>, signal?: AbortSignal, delayMsBetweenCollections?: number, shidoscanOffset?: number }} [options]
  */
 export async function fetchNFTsFromTransactions(account, options = {}) {
   const collections = options.whitelistedCollections ?? WHITELISTED_COLLECTIONS;
   const holdings = {};
   const acc = String(account).toLowerCase();
+  const delayMs =
+    options.delayMsBetweenCollections != null
+      ? Math.max(0, Number(options.delayMsBetweenCollections))
+      : 0;
 
   for (const collectionAddress of Object.keys(collections)) {
     try {
@@ -155,6 +211,7 @@ export async function fetchNFTsFromTransactions(account, options = {}) {
       if (err?.name === "AbortError") throw err;
       console.warn(`Failed to fetch transactions for ${collectionAddress}`, err?.message || err);
     }
+    if (delayMs > 0) await sleep(delayMs);
   }
 
   return holdings;
@@ -163,22 +220,34 @@ export async function fetchNFTsFromTransactions(account, options = {}) {
 /**
  * @param {import("web3").default} web3
  * @param {string} account
- * @param {{ whitelistedCollections?: Record<string, string>, getEnumerableNFTContract?: typeof getEnumerableNFTContract }} [options]
+ * @param {{ whitelistedCollections?: Record<string, string>, getEnumerableNFTContract?: typeof getEnumerableNFTContract, signal?: AbortSignal, delayBetweenCollectionsMs?: number, delayMsBetweenCollections?: number, delayMetadataBetweenCollectionsMs?: number, metadataConcurrency?: number }} [options]
  */
 export async function fetchUserNFTsAcrossCollections(web3, account, options = {}) {
   const collections = options.whitelistedCollections ?? WHITELISTED_COLLECTIONS;
   const getContractFn = options.getEnumerableNFTContract ?? getEnumerableNFTContract;
   const allNFTs = [];
+  const delayBetween =
+    options.delayMetadataBetweenCollectionsMs != null
+      ? Math.max(0, Number(options.delayMetadataBetweenCollectionsMs))
+      : 0;
 
   try {
+    const scanDelay =
+      options.delayMsBetweenCollections != null
+        ? Math.max(0, Number(options.delayMsBetweenCollections))
+        : options.delayBetweenCollectionsMs != null
+          ? Math.max(0, Number(options.delayBetweenCollectionsMs))
+          : 400;
     const holds = await fetchNFTsFromTransactions(account, {
       whitelistedCollections: collections,
       signal: options.signal,
+      delayMsBetweenCollections: scanDelay,
     });
 
     for (const [collectionAddress, tokenIds] of Object.entries(holds)) {
       if (!(collectionAddress in collections)) continue;
-      const symbol = collections[collectionAddress];
+      const row = getNftCollectionRegistryEntry(collectionAddress);
+      const symbol = row?.symbol || collections[collectionAddress] || "";
       try {
         const contract = await getContractFn(web3, collectionAddress);
         const metadata = await getMultipleNFTsMetadata(
@@ -186,7 +255,8 @@ export async function fetchUserNFTsAcrossCollections(web3, account, options = {}
           collectionAddress,
           tokenIds,
           contract,
-          getContractFn
+          getContractFn,
+          { concurrency: options.metadataConcurrency ?? 3 }
         );
         const enriched = metadata.map((nft) => ({
           ...nft,
@@ -197,6 +267,7 @@ export async function fetchUserNFTsAcrossCollections(web3, account, options = {}
       } catch (err) {
         console.warn(`Error loading metadata for ${symbol}`, err);
       }
+      if (delayBetween > 0) await sleep(delayBetween);
     }
   } catch (err) {
     console.error("Unable to fetch holdings:", err);
@@ -261,34 +332,34 @@ export async function getMultipleNFTsMetadata(
   contractAddress,
   tokenIds,
   contractInstance = null,
-  getNFTContractFn = getEnumerableNFTContract
+  getNFTContractFn = getEnumerableNFTContract,
+  opts = {}
 ) {
   const contract =
     contractInstance || (await getNFTContractFn(web3, contractAddress));
+  const concurrency = Math.max(1, Math.min(12, Number(opts.concurrency) || 3));
 
   return (
-    await Promise.all(
-      tokenIds.map(async (tokenId) => {
-        try {
-          const tokenURI = await contract.methods.tokenURI(tokenId).call();
-          const metadata = await fetchIPFSMetadata(tokenURI, contractAddress, tokenId);
+    await mapWithLimit(tokenIds, concurrency, async (tokenId) => {
+      try {
+        const tokenURI = await contract.methods.tokenURI(tokenId).call();
+        const metadata = await fetchIPFSMetadata(tokenURI, contractAddress, tokenId);
 
-          if (addrEq(contractAddress, SHIDOSHI_COLLECTION)) {
-            metadata.image = transformImageURI(tokenURI, contractAddress, tokenId);
-          } else {
-            metadata.image = transformImageURI(metadata.image, contractAddress, tokenId);
-          }
-
-          return {
-            tokenId,
-            ...metadata,
-          };
-        } catch (e) {
-          console.warn(`Failed to fetch metadata for token ${tokenId}`, e?.message || e);
-          return null;
+        if (addrEq(contractAddress, SHIDOSHI_COLLECTION)) {
+          metadata.image = transformImageURI(tokenURI, contractAddress, tokenId);
+        } else {
+          metadata.image = transformImageURI(metadata.image, contractAddress, tokenId);
         }
-      })
-    )
+
+        return {
+          tokenId,
+          ...metadata,
+        };
+      } catch (e) {
+        console.warn(`Failed to fetch metadata for token ${tokenId}`, e?.message || e);
+        return null;
+      }
+    })
   ).filter(Boolean);
 }
 

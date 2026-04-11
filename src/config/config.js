@@ -15,7 +15,10 @@ import {
     NFT_STAKE_FACTORY_ABI
 } from "./abi";
 
-
+import {
+  SHIDO_WHITELISTED_COLLECTIONS,
+  SHIDO_COLLECTION_GATEWAYS,
+} from "./nftCollectionRegistry.js";
 
 export const CONTRACTS = {
     Stash: "0x5B73743d6e99E911e6C412C0BcA9a702475F0595",
@@ -96,23 +99,9 @@ export const KIDDO_ADDRESSES = {
     "0x7a69": CONTRACTS.KIDDOTEST
 };
 
-export const WHITELISTED_COLLECTIONS = {
-    //"0x706c3a3ed9670Ce0c53Be41Ba74759EFb0EC445e": "FUNK",
-    "0xB0B228476Fa26140e6C8D04d437Cd38f47003fCC": "PixelTycoons Founders",
-    //"0x1dDe51d24e8c46B8eCC19526d35CDC93b4BAA956": "Genesis NFT",
-    "0x5782fDaA53bAB4625B2ABf51aE73eb6228Bf6Ec8": "Shidoshi Ninja's",
-    "0xDcA08690dEFA9Bbbb0FA21103a5F9E10B545e613": "Trash Mafia",
-    "0xba10879b62d829ddd541bb9aee9654cfa11c8429": "Shinobi Warriors",
-    "0x5DeeaAeC8B51e80C2Fee451bc4dc014E91f9aD4c": "CRAZY CHICKEN NFT Part 1",
-    "0xF8Df8d12024B1f8fA0578Ae166534165EAF87a9C": "PixelTycoons",
-    "0x8782C1130FEc668724C700380e1DADe9b54F37D7": "Nerd Operations",
-    //"0xb65ef0BDb1822f875f10AfE9BEC3bE674d38B11A": "test"
-};
+export const WHITELISTED_COLLECTIONS = SHIDO_WHITELISTED_COLLECTIONS;
 
-export const GATEWAYS = {
-    "0xB0B228476Fa26140e6C8D04d437Cd38f47003fCC": "https://maroon-normal-parrotfish-989.mypinata.cloud/ipfs/",
-    //"0x1dDe51d24e8c46B8eCC19526d35CDC93b4BAA956": "https://cyan-warm-llama-412.mypinata.cloud/ipfs/"
-}
+export const GATEWAYS = SHIDO_COLLECTION_GATEWAYS;
 
 // export const STAKING_POOLS = {
 //       "0x796F48d17d38E5f0A7aFe7966448828bdc13e8B1": "0x7dA3929506D2584B7ECFA29163F75Ee1789b460E", // 0xDED

@@ -1,6 +1,6 @@
-import {multicallPools, resolveAllPrices} from "./multicallPools";
+import { multicallPools, resolveAllPrices, MULTICALL_POOLS_TUNING } from "./multicallPools";
 import {multicallBalances} from "./multicallBalances";
-import { readNftPoolSummariesMulticall } from "./multicallNftPoolSummaries";
+import { readNftPoolSummariesMulticall, NFT_POOL_SUMMARIES_MULTICALL_TUNING } from "./multicallNftPoolSummaries";
 import {copyToClipboard, shortenAddress} from "./address";
 import {
     formatAmount, toBI, convertBigIntToFloat, calculateShidoForMaxPurchase, parseAmountToWei, formatNumberWithCommas,
@@ -15,14 +15,21 @@ toChecksumOrNull, toRaw, fromRaw, price1Per0_from_sqrtP,
   shortSym, selectRouteKeepingPayToken, fmt8, floorTo, poolMetaCache, fmtUSD, getDisplayPairSymbols, resolveLogoUrl, splitSymbolsFromLabel,
 } from "./price";
 import { addrEq, uniqBy } from "./helpers";
-import { fetchUniswapV3TickLiquidityHistogram } from "./uniswapV3LiquidityHistogram";
-import { fetchWalletV3PositionsForPool } from "./uniswapV3WalletPositions";
+import {
+  fetchUniswapV3TickLiquidityHistogram,
+  V3_LIQUIDITY_HISTOGRAM_MULTICALL_TUNING,
+} from "./uniswapV3LiquidityHistogram";
+import {
+  fetchWalletV3PositionsForPool,
+  V3_WALLET_POSITIONS_MULTICALL_TUNING,
+} from "./uniswapV3WalletPositions";
 import { dirForAction, poolDirForToken, makeSwapLink, makeSwapUrl } from "./swap";
 import { resolveTokenImageByAddress } from "./tokenImage";
 import {
   ERC721_BATCH_HELPER_ABI,
   ERC721_TRANSFER_EVENT_ABI,
   ERC721_TRANSFER_LOG_CHUNK_BLOCKS,
+  ERC721_TRANSFER_DISCOVERY_TUNING,
   parseTokenIdsFromString,
   listOwnedErc721TokenIds,
   filterOwnedErc721TokenIds,
@@ -33,6 +40,9 @@ import {
   discoverErc1155CandidateIdsFromLogs,
   fetchErc1155BalancesForIds,
   loadErc1155HoldingsFromChain,
+  ERC1155_INVENTORY_TUNING,
+  ERC1155_LOG_QUERIES_PER_CHUNK,
+  erc1155LogScanApproxGetLogsCalls,
   ERC1155_DEFAULT_LOOKBACK_BLOCKS,
   ERC1155_LOG_CHUNK_BLOCKS,
 } from "./nft1155Inventory";
@@ -44,7 +54,7 @@ import {
   IPFS_GATEWAY_PINATA,
   IPFS_GATEWAY_IPFS_IO,
 } from "./ipfs";
-export {multicallBalances, multicallPools, readNftPoolSummariesMulticall,
+export {multicallBalances, multicallPools, MULTICALL_POOLS_TUNING, readNftPoolSummariesMulticall, NFT_POOL_SUMMARIES_MULTICALL_TUNING,
     copyToClipboard, shortenAddress,
     formatAmount, toBI, convertBigIntToFloat, calculateShidoForMaxPurchase, parseAmountToWei, 
     parseUnits, handleApproveAndRunSafe, handleApproveAndRunWeb3, handleApproveAndRun, formatNumberWithCommas,
@@ -58,7 +68,9 @@ export {multicallBalances, multicallPools, readNftPoolSummariesMulticall,
 
 addrEq, uniqBy,
   fetchUniswapV3TickLiquidityHistogram,
+  V3_LIQUIDITY_HISTOGRAM_MULTICALL_TUNING,
   fetchWalletV3PositionsForPool,
+  V3_WALLET_POSITIONS_MULTICALL_TUNING,
   dirForAction, poolDirForToken, makeSwapLink, makeSwapUrl,
   resolveLogoUrl,
   resolveTokenImageByAddress,
@@ -66,6 +78,7 @@ addrEq, uniqBy,
   ERC721_BATCH_HELPER_ABI,
   ERC721_TRANSFER_EVENT_ABI,
   ERC721_TRANSFER_LOG_CHUNK_BLOCKS,
+  ERC721_TRANSFER_DISCOVERY_TUNING,
   parseTokenIdsFromString,
   listOwnedErc721TokenIds,
   filterOwnedErc721TokenIds,
@@ -74,6 +87,9 @@ addrEq, uniqBy,
   discoverErc1155CandidateIdsFromLogs,
   fetchErc1155BalancesForIds,
   loadErc1155HoldingsFromChain,
+  ERC1155_INVENTORY_TUNING,
+  ERC1155_LOG_QUERIES_PER_CHUNK,
+  erc1155LogScanApproxGetLogsCalls,
   ERC1155_DEFAULT_LOOKBACK_BLOCKS,
   ERC1155_LOG_CHUNK_BLOCKS,
   ipfsToHttp,
@@ -87,6 +103,10 @@ export * from "./swap/math.js";
 export * from "./pricing.js";
 export * from "./getContract.js"
 export * from "./nftMetadata.js"
+export * from "./mapWithLimit.js";
+export * from "./fetchRetry.js";
+export * from "./shidoscanHttp.js";
+export * from "./nftSingleTransfer.js";
 export * from "./marketsOverview.js"
 export * from "./ecosystemQueries.js"
 export * from "./swap/usd.js";

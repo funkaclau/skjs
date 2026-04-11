@@ -80,6 +80,13 @@ const ZERO = "0x0000000000000000000000000000000000000000";
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
+/** Defaults for {@link readNftPoolSummariesMulticall} — batch size, pauses, aggregate3 call budget. */
+export const NFT_POOL_SUMMARIES_MULTICALL_TUNING = Object.freeze({
+  POOLS_PER_WAVE: 10,
+  PAUSE_MS_BETWEEN_WAVES: 100,
+  MAX_CALLS_PER_AGGREGATE: 90,
+});
+
 function nowSec() {
   return Math.floor(Date.now() / 1000);
 }
@@ -161,9 +168,10 @@ function summarizePoolRow(addr, row) {
  * @param {{ poolsPerWave?: number, pauseMs?: number, maxCallsPerAggregate?: number }} [opts]
  */
 export async function readNftPoolSummariesMulticall(web3, poolAddresses, opts = {}) {
-  const poolsPerWave = opts.poolsPerWave ?? 10;
-  const pauseMs = opts.pauseMs ?? 100;
-  const maxCallsPerAggregate = opts.maxCallsPerAggregate ?? 90;
+  const poolsPerWave = opts.poolsPerWave ?? NFT_POOL_SUMMARIES_MULTICALL_TUNING.POOLS_PER_WAVE;
+  const pauseMs = opts.pauseMs ?? NFT_POOL_SUMMARIES_MULTICALL_TUNING.PAUSE_MS_BETWEEN_WAVES;
+  const maxCallsPerAggregate =
+    opts.maxCallsPerAggregate ?? NFT_POOL_SUMMARIES_MULTICALL_TUNING.MAX_CALLS_PER_AGGREGATE;
 
   const valid = (poolAddresses || [])
     .filter((a) => a && typeof a === "string" && web3.utils.isAddress(a))

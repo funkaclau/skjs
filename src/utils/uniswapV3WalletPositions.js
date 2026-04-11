@@ -7,7 +7,15 @@ import { MULTICALL } from "../config";
 import { addrEq } from "./helpers";
 
 const MULTICALL_ADDRESS = "0x49Bb5bfAAAe05e44d4922F236304b2e370DaF442";
-const MAX_MULTICALL = 220;
+
+/** Batch size and pause between Multicall3 chunks for NFPM position reads. */
+export const V3_WALLET_POSITIONS_MULTICALL_TUNING = Object.freeze({
+  MAX_CALLS_PER_CHUNK: 220,
+  PAUSE_MS_BETWEEN_CHUNKS: 50,
+});
+
+const MAX_MULTICALL = V3_WALLET_POSITIONS_MULTICALL_TUNING.MAX_CALLS_PER_CHUNK;
+const PAUSE_BETWEEN_CHUNKS_MS = V3_WALLET_POSITIONS_MULTICALL_TUNING.PAUSE_MS_BETWEEN_CHUNKS;
 
 const NFPM_ABI = [
   {
@@ -57,7 +65,7 @@ async function aggregate3Chunked(web3, calls) {
     const res = await mc.methods.aggregate3(chunk).call();
     out.push(...res);
     if (i + MAX_MULTICALL < calls.length) {
-      await new Promise((r) => setTimeout(r, 50));
+      await new Promise((r) => setTimeout(r, PAUSE_BETWEEN_CHUNKS_MS));
     }
   }
   return out;

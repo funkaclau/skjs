@@ -93,11 +93,13 @@ export async function listOwnedErc721TokenIds(web3, collectionAddress, owner) {
   }
 }
 
-/**
- * Default block span per `getPastEvents` range (fits typical RPC limits; tune via `blockChunkSize`).
- * @type {bigint}
- */
-export const ERC721_TRANSFER_LOG_CHUNK_BLOCKS = 45000n;
+/** ERC-721 `Transfer` log discovery — one `getPastEvents` per chunk (vs four for ERC-1155). */
+export const ERC721_TRANSFER_DISCOVERY_TUNING = Object.freeze({
+  LOG_CHUNK_BLOCKS: 45000n,
+});
+
+/** @deprecated Prefer {@link ERC721_TRANSFER_DISCOVERY_TUNING}.LOG_CHUNK_BLOCKS */
+export const ERC721_TRANSFER_LOG_CHUNK_BLOCKS = ERC721_TRANSFER_DISCOVERY_TUNING.LOG_CHUNK_BLOCKS;
 
 /**
  * Confirm which candidate token IDs the wallet still owns (cheap `ownerOf` calls; use after Shidoscan index).
@@ -147,7 +149,9 @@ export async function discoverOwnedErc721ViaTransferLogs(web3, collectionAddress
   const fromBlock = options.fromBlock != null ? BigInt(options.fromBlock) : 0n;
   const toBlockOpt = options.toBlock != null ? BigInt(options.toBlock) : null;
   const chunk =
-    options.blockChunkSize != null ? BigInt(options.blockChunkSize) : ERC721_TRANSFER_LOG_CHUNK_BLOCKS;
+    options.blockChunkSize != null
+      ? BigInt(options.blockChunkSize)
+      : ERC721_TRANSFER_DISCOVERY_TUNING.LOG_CHUNK_BLOCKS;
 
   const collection = web3.utils.toChecksumAddress(collectionAddress);
   const owner = web3.utils.toChecksumAddress(ownerAddress);

@@ -1,11 +1,12 @@
 {
   "name": "skjs",
-  "version": "1.0.11",
+  "version": "1.0.13",
   "description": "ShidoKid JS utilities",
   "type": "module",
   "main": "./src/index.js",
   "exports": {
     ".": "./src/index.js",
+    "./config/config.js": "./src/config/config.js",
     "./utils/address.js": "./src/utils/address.js",
     "./utils/bigint.js": "./src/utils/bigint.js",
     "./utils/price.js": "./src/utils/price.js",
@@ -16,7 +17,14 @@
     "./utils/tokenImage.js": "./src/utils/tokenImage.js",
     "./utils/ipfs.js": "./src/utils/ipfs.js",
     "./utils/nft721.js": "./src/utils/nft721.js",
-    "./utils/nftMetadata.js": "./src/utils/nftMetadata.js"
+    "./utils/nftMetadata.js": "./src/utils/nftMetadata.js",
+    "./utils/mapWithLimit.js": "./src/utils/mapWithLimit.js",
+    "./utils/fetchRetry.js": "./src/utils/fetchRetry.js",
+    "./utils/shidoscanHttp.js": "./src/utils/shidoscanHttp.js",
+    "./utils/nftSingleTransfer.js": "./src/utils/nftSingleTransfer.js",
+    "./config/nftCollectionRegistry.js": "./src/config/nftCollectionRegistry.js",
+    "./config/nftCollectionBanners.js": "./src/config/nftCollectionBanners.js",
+    "./config/assets/nftCollections/*": "./src/config/assets/nftCollections/*"
   },
   "keywords": [
     "web3",

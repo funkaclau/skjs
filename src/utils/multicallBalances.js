@@ -1,3 +1,8 @@
+/**
+ * ERC-20 `balanceOf` via **one** Multicall3 `aggregate3` over the full call list — no chunking or pauses here.
+ * Large token lists can hit RPC payload limits; split upstream or extend this module if needed.
+ */
+
 import Web3 from "web3";
 import { MULTICALL } from "../config";
 
@@ -19,7 +24,6 @@ export async function multicallBalances(web3, userAddress, tokenAddresses) {
     console.warn("[multicallBalances] Invalid userAddress:", userAddress);
     return {};
   }
-  console.log(userAddress)
   try {
     const multicall = new web3.eth.Contract(MULTICALL, MULTICALL_ADDRESS);
 

@@ -1,17 +1,59 @@
 /**
- * ERC-1155 inventory discovery: candidate ids from TransferSingle / TransferBatch logs,
- * then confirmed with balanceOf(owner, id).
+ * ERC-1155 inventory: candidate ids from TransferSingle / TransferBatch logs, then balanceOf(owner, id).
+ * There is no wallet-wide balance; every id needs its own call after discovery.
  *
- * Browser note: many archive RPCs block CORS or 429 on heavy eth_getLogs — default to a **recent
- * lookback** and **small chunks**; there is no ERC-1155 equivalent to ERC-721 `balanceOf(address)` (one
- * number for the whole wallet); balances are always per `(owner, id)`.
+ * ### Why “one NFT” can still take a long time
+ * Auto-discovery does **not** stop at the first id. It scans the full `[latest − lookback, latest]`
+ * range. Per block chunk we run **four** serialized `getPastEvents` (Single to/from, Batch to/from) —
+ * see {@link ERC1155_LOG_QUERIES_PER_CHUNK}.
+ *
+ * **Approx. eth_getLogs calls** ≈ `ceil(lookback / logChunk) × ERC1155_LOG_QUERIES_PER_CHUNK`.
+ * Example: 600_000 / 10_000 = 60 chunks → **240** getLogs (four per chunk), plus network time.
+ * If `pauseMs > 0`, wall time also adds **`pauseMs × (chunks − 1)`** (e.g. 100ms × 199 ≈ 20s) on top of RPC latency.
+ * **`balanceOf` is usually cheap** for a small id set; the log scan dominates.
+ *
+ * **Fast path:** pass `skipLogs: true` and known ids (or use “Check balances” in SKTools) to skip log discovery entirely.
+ *
+ * ### Tuning (sweet spot)
+ * Adjust {@link ERC1155_INVENTORY_TUNING} or override per call: `lookbackBlocks`, `blockChunkSize`, `pauseMs`, `balanceChunkSize`.
  */
 
-/** Default blocks to scan backward from latest when `fromBlock` is omitted (not full chain history). */
-export const ERC1155_DEFAULT_LOOKBACK_BLOCKS = 2_000_000n;
+/** All defaults for log scan + balance waves — change here to tune speed vs RPC load. */
+export const ERC1155_INVENTORY_TUNING = Object.freeze({
+  /** Blocks backward from latest when `fromBlock` is omitted. Lower = faster; may miss older transfers. */
+  LOG_LOOKBACK_BLOCKS: 600_000n,
+  /**
+   * Blocks per `getPastEvents` range (inclusive span = this value).
+   * Many Shido/public RPCs cap `eth_getLogs` to **10_000** blocks; Zeeve archive enforces the same — stay ≤10_000 or use adaptive shrink.
+   */
+  LOG_BLOCK_CHUNK_SIZE: 10_000n,
+  /** Sleep after each log chunk (ms). Use `0` for max speed; raise if the RPC rate-limits. */
+  LOG_PAUSE_MS_BETWEEN_CHUNKS: 0,
+  /** Parallel `balanceOf(owner, id)` calls per wave in {@link fetchErc1155BalancesForIds} (capped 1–40). */
+  BALANCE_OF_CONCURRENCY: 28,
+});
 
-/** Smaller than ERC-721 default — fewer logs per eth_getLogs, less 429 / payload blowups in the browser. */
-export const ERC1155_LOG_CHUNK_BLOCKS = 10_000n;
+/** Serialized `getPastEvents` calls executed per block chunk (to/from × Single/Batch). */
+export const ERC1155_LOG_QUERIES_PER_CHUNK = 4;
+
+/** @deprecated Prefer {@link ERC1155_INVENTORY_TUNING}.LOG_LOOKBACK_BLOCKS */
+export const ERC1155_DEFAULT_LOOKBACK_BLOCKS = ERC1155_INVENTORY_TUNING.LOG_LOOKBACK_BLOCKS;
+
+/** @deprecated Prefer {@link ERC1155_INVENTORY_TUNING}.LOG_BLOCK_CHUNK_SIZE */
+export const ERC1155_LOG_CHUNK_BLOCKS = ERC1155_INVENTORY_TUNING.LOG_BLOCK_CHUNK_SIZE;
+
+/**
+ * Rough count of `eth_getLogs` RPCs for a full log scan (four queries per chunk).
+ * @param {bigint | number | string} lookbackBlocks
+ * @param {bigint | number | string} logChunkBlocks
+ */
+export function erc1155LogScanApproxGetLogsCalls(lookbackBlocks, logChunkBlocks) {
+  const L = BigInt(lookbackBlocks ?? 0);
+  const C = BigInt(logChunkBlocks ?? 1n);
+  if (L <= 0n || C <= 0n) return 0;
+  const chunks = (L + C - 1n) / C;
+  return Number(chunks * BigInt(ERC1155_LOG_QUERIES_PER_CHUNK));
+}
 
 const ERC1155_BALANCE_ABI = [
   {
@@ -60,6 +102,14 @@ function toIdStr(v) {
   }
 }
 
+/** Some nodes reject `eth_getLogs` when `toBlock - fromBlock` is too large (e.g. Zeeve: max 10_000). */
+function isGetLogsBlockRangeTooLargeError(e) {
+  const s = `${e?.message ?? ""} ${e?.error?.message ?? ""} ${typeof e === "string" ? e : ""}`;
+  return /maximum.*\b(from|,)?.*to.*\bblocks?\s*distance|blocks?\s+range|exceeds.*maximum|too many blocks|query returned more than/i.test(
+    s
+  );
+}
+
 /**
  * Collect candidate token ids from ERC-1155 transfer logs (received or sent by `owner`).
  * Uses chunked `getPastEvents` like {@link discoverOwnedErc721ViaTransferLogs}.
@@ -80,8 +130,13 @@ function toIdStr(v) {
 export async function discoverErc1155CandidateIdsFromLogs(web3, collectionAddress, ownerAddress, options = {}) {
   const toBlockOpt = options.toBlock != null ? BigInt(options.toBlock) : null;
   const chunk =
-    options.blockChunkSize != null ? BigInt(options.blockChunkSize) : ERC1155_LOG_CHUNK_BLOCKS;
-  const pauseMs = Math.max(0, Number(options.pauseMs) || 0);
+    options.blockChunkSize != null
+      ? BigInt(options.blockChunkSize)
+      : ERC1155_INVENTORY_TUNING.LOG_BLOCK_CHUNK_SIZE;
+  const pauseMs =
+    options.pauseMs != null && options.pauseMs !== ""
+      ? Math.max(0, Number(options.pauseMs))
+      : Math.max(0, Number(ERC1155_INVENTORY_TUNING.LOG_PAUSE_MS_BETWEEN_CHUNKS));
 
   const collection = web3.utils.toChecksumAddress(collectionAddress);
   const owner = web3.utils.toChecksumAddress(ownerAddress);
@@ -97,7 +152,9 @@ export async function discoverErc1155CandidateIdsFromLogs(web3, collectionAddres
     fromBlock = BigInt(options.fromBlock);
   } else {
     const lookback =
-      options.lookbackBlocks != null ? BigInt(options.lookbackBlocks) : ERC1155_DEFAULT_LOOKBACK_BLOCKS;
+      options.lookbackBlocks != null
+        ? BigInt(options.lookbackBlocks)
+        : ERC1155_INVENTORY_TUNING.LOG_LOOKBACK_BLOCKS;
     fromBlock = latest >= lookback ? latest - lookback + 1n : 0n;
   }
 
@@ -128,25 +185,35 @@ export async function discoverErc1155CandidateIdsFromLogs(web3, collectionAddres
   };
 
   try {
+    let chunkEffective = chunk;
+    const minChunk = 1000n;
     let from = fromBlock;
     while (from <= upper) {
-      const to = from + chunk - 1n > upper ? upper : from + chunk - 1n;
+      const to = from + chunkEffective - 1n > upper ? upper : from + chunkEffective - 1n;
       const fb = Number(from);
       const tb = Number(to);
 
-      /* Serialize eth_getLogs — parallel bursts often trigger 429 / CORS failures on public RPCs. */
-      pushSingle(
-        await contract.getPastEvents("TransferSingle", { filter: { to: owner }, fromBlock: fb, toBlock: tb })
-      );
-      pushSingle(
-        await contract.getPastEvents("TransferSingle", { filter: { from: owner }, fromBlock: fb, toBlock: tb })
-      );
-      pushBatch(
-        await contract.getPastEvents("TransferBatch", { filter: { to: owner }, fromBlock: fb, toBlock: tb })
-      );
-      pushBatch(
-        await contract.getPastEvents("TransferBatch", { filter: { from: owner }, fromBlock: fb, toBlock: tb })
-      );
+      try {
+        /* Serialize eth_getLogs ({@link ERC1155_LOG_QUERIES_PER_CHUNK} calls per chunk). */
+        pushSingle(
+          await contract.getPastEvents("TransferSingle", { filter: { to: owner }, fromBlock: fb, toBlock: tb })
+        );
+        pushSingle(
+          await contract.getPastEvents("TransferSingle", { filter: { from: owner }, fromBlock: fb, toBlock: tb })
+        );
+        pushBatch(
+          await contract.getPastEvents("TransferBatch", { filter: { to: owner }, fromBlock: fb, toBlock: tb })
+        );
+        pushBatch(
+          await contract.getPastEvents("TransferBatch", { filter: { from: owner }, fromBlock: fb, toBlock: tb })
+        );
+      } catch (e) {
+        if (isGetLogsBlockRangeTooLargeError(e) && chunkEffective > minChunk) {
+          chunkEffective = chunkEffective > 2n * minChunk ? chunkEffective / 2n : minChunk;
+          continue;
+        }
+        throw e;
+      }
 
       from = to + 1n;
       if (pauseMs > 0 && from <= upper) {
@@ -176,7 +243,10 @@ export async function discoverErc1155CandidateIdsFromLogs(web3, collectionAddres
  * @returns {Promise<{ tokenId: bigint, balance: bigint }[]>} Only ids with balance &gt; 0, sorted by token id
  */
 export async function fetchErc1155BalancesForIds(web3, collectionAddress, ownerAddress, idStrs, opts = {}) {
-  const chunkSize = Math.max(1, Math.min(40, Number(opts.chunkSize) || 28));
+  const chunkSize = Math.max(
+    1,
+    Math.min(40, Number(opts.chunkSize) || Number(ERC1155_INVENTORY_TUNING.BALANCE_OF_CONCURRENCY))
+  );
   const contract = new web3.eth.Contract(ERC1155_BALANCE_ABI, collectionAddress);
   const want = ownerAddress;
   const out = [];
@@ -213,17 +283,19 @@ export async function fetchErc1155BalancesForIds(web3, collectionAddress, ownerA
  * @param {{
  *   fromBlock?: bigint | number | string,
  *   toBlock?: bigint | number | string,
+ *   lookbackBlocks?: bigint | number | string,
  *   blockChunkSize?: bigint | number | string,
  *   extraCandidateIds?: Iterable<string | number | bigint>,
  *   balanceChunkSize?: number,
  *   skipLogs?: boolean,
- *   lookbackBlocks?: bigint | number | string,
- *   blockChunkSize?: bigint | number | string,
  *   pauseMs?: number,
+ *   logsWeb3?: import("web3").default,
  * }} [options]
+ * `logsWeb3` — optional second provider for `getPastEvents` only (e.g. archive RPC); `balanceOf` still uses `web3`.
  * @returns {Promise<{ tokenId: bigint, balance: bigint }[]>}
  */
 export async function loadErc1155HoldingsFromChain(web3, collectionAddress, ownerAddress, options = {}) {
+  const logsWeb3 = options.logsWeb3 ?? web3;
   if (options.skipLogs) {
     const raw = [...(options.extraCandidateIds ?? [])]
       .map((x) => toIdStr(x))
@@ -234,7 +306,12 @@ export async function loadErc1155HoldingsFromChain(web3, collectionAddress, owne
       chunkSize: options.balanceChunkSize,
     });
   }
-  const candidates = await discoverErc1155CandidateIdsFromLogs(web3, collectionAddress, ownerAddress, options);
+  const candidates = await discoverErc1155CandidateIdsFromLogs(
+    logsWeb3,
+    collectionAddress,
+    ownerAddress,
+    options
+  );
   if (candidates.length === 0) return [];
   return fetchErc1155BalancesForIds(web3, collectionAddress, ownerAddress, candidates, {
     chunkSize: options.balanceChunkSize,

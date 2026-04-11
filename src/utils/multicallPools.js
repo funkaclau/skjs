@@ -2,13 +2,20 @@ import { MULTICALL } from "../config";
 import { midOutPerIn_from_slot0 } from "./price";
 const MULTICALL_ADDRESS = "0x49Bb5bfAAAe05e44d4922F236304b2e370DaF442";
 
-/** 4 calls per pool (slot0, token0, token1, liquidity). Tune down if the public gateway 503s. */
-const POOLS_PER_AGGREGATE_BATCH = 20;
-/** 2 calls per token (decimals, symbol). */
-const TOKENS_PER_AGGREGATE_BATCH = 20;
+/** {@link multicallPools} — pool batch size, token meta batch size, pause between aggregate3 waves. */
+export const MULTICALL_POOLS_TUNING = Object.freeze({
+  /** Pools per Multicall3 batch (4 calls each: slot0, token0, token1, liquidity). */
+  POOLS_PER_AGGREGATE_BATCH: 20,
+  /** Unique tokens per Multicall3 batch (2 calls each: decimals, symbol). */
+  TOKENS_PER_AGGREGATE_BATCH: 20,
+  PAUSE_MS_BETWEEN_AGGREGATE_BATCHES: 90,
+});
+
+const POOLS_PER_AGGREGATE_BATCH = MULTICALL_POOLS_TUNING.POOLS_PER_AGGREGATE_BATCH;
+const TOKENS_PER_AGGREGATE_BATCH = MULTICALL_POOLS_TUNING.TOKENS_PER_AGGREGATE_BATCH;
 
 const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
-const PAUSE_BETWEEN_AGGREGATE_MS = 90;
+const PAUSE_BETWEEN_AGGREGATE_MS = MULTICALL_POOLS_TUNING.PAUSE_MS_BETWEEN_AGGREGATE_BATCHES;
 
 const POOL_ABI = [
   {
@@ -84,7 +91,6 @@ export async function multicallPools(web3, poolAddresses) {
 
   for (let off = 0; off < validPools.length; off += POOLS_PER_AGGREGATE_BATCH) {
     const slice = validPools.slice(off, off + POOLS_PER_AGGREGATE_BATCH);
-    console.log(slice)
     const calls = [];
     for (const addr of slice) {
       const checksummedAddr = web3.utils.toChecksumAddress(addr);
