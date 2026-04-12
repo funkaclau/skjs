@@ -1,11 +1,12 @@
 {
   "name": "skjs",
-  "version": "1.0.14",
+  "version": "1.0.15",
   "description": "ShidoKid JS utilities",
   "type": "module",
   "main": "./src/index.js",
   "exports": {
     ".": "./src/index.js",
+    "./socialWidgets": "./src/components/socialWidgets.jsx",
     "./config/config.js": "./src/config/config.js",
     "./utils/address.js": "./src/utils/address.js",
     "./utils/bigint.js": "./src/utils/bigint.js",

@@ -1,6 +1,5 @@
 import { FaTelegramPlane, FaGlobe, FaMedium, FaYoutube } from "react-icons/fa";
 import { BsTwitterX } from "react-icons/bs";
-import { Tooltip } from "react-tooltip"; // Optional: If you use external tooltip lib
 import clsx from "clsx";
 
 // 💡 Optional reusable classes

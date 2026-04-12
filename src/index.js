@@ -1,7 +1,7 @@
 export * from "./utils";
 
 export * from "./models";
-export {getWidgets} from "./components/socialWidgets";
+// `getWidgets` lives at subpath `skjs/socialWidgets` so apps that only need utils (e.g. Vite + wagmi) are not forced to install react-icons / clsx.
 import {
     BATCH_ABI,
     TAG,
